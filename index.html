@@ -252,8 +252,25 @@ var QGROUP={'Revision':null,'Mock interviews':null,'Practice':null,'Project deep
 var NOQ={m12:1,m13:1,m14:1};
 TRACKS.forEach(function(t){t.groups.forEach(function(g){
   var q=g.name in QGROUP?QGROUP[g.name]:QTRACK[t.id],topic=g.name.indexOf('Step ')===0?g.name.split(': ').slice(1).join(': ')+' ':'';
-  g.items.forEach(function(it){it.q=q&&!NOQ[it.id]?q[0]+topic+it.t+q[1]:'';});
+  g.items.forEach(function(it){if(topic)it.full=topic+'– '+it.t.charAt(0).toLowerCase()+it.t.slice(1);it.q=q&&!NOQ[it.id]?q[0]+topic+it.t+q[1]:'';});
 });});
+var DAYSETS={'system-design':[1,3,5],'lld':[2,4,6],'behavioural':[1,3,5,6],'ai':[1,2,3,4,5,6]};
+TRACKS.forEach(function(t){
+  var byWeek={};
+  t.groups.forEach(function(g){g.items.forEach(function(it){
+    var base=(it.w-1)*7;
+    if(g.name.indexOf('Machine coding')===0){it.d0=it.d=base;return;}
+    if(g.name==='Mock interviews'){it.d0=it.d=base+1;return;}
+    (byWeek[it.w]=byWeek[it.w]||[]).push(it);
+  });});
+  Object.keys(byWeek).forEach(function(w){
+    var list=byWeek[w],n=list.length,base=(w-1)*7,set=DAYSETS[t.id];
+    list.forEach(function(it,k){
+      if(set){it.d0=it.d=base+set[Math.floor(k*set.length/n)];}
+      else{it.d0=base+Math.floor(k*7/n);it.d=Math.max(it.d0,base+Math.floor((k+1)*7/n)-1);}
+    });
+  });
+});
 var SPLIT=[['DSA, from the A2Z sheet','3 hours','dsa'],['System design or LLD, on alternate days','1 hour 15 minutes','system-design'],['AI rounds','1 hour','ai'],['Behavioural and applications','45 minutes','applications']];
 
 /* ---------- dates ---------- */
@@ -492,14 +509,14 @@ function stepper(label,value,step,onChange){
     h('button',{type:'button','aria-label':'Increase '+label,onclick:function(){set(value+step);},text:'+'}));
 }
 
-function itemRow(it,track,cw,showTrack){
+function itemRow(it,track,cw,showTrack,sfx){
   var done=!!state.checks.done[it.id],rev=!!state.checks.revise[it.id],note=state.checks.notes[it.id]||'';
-  var cid='c_'+it.id;
+  var cid='c_'+it.id+(sfx||'');
   var meta=h('div',{class:'meta'});
   if(showTrack)app(meta,h('span',{text:track.name}));
   if(it.w){
-    if(!done&&it.w<cw)app(meta,h('span',{class:'late',text:'Due week '+it.w}));
-    else app(meta,h('span',{text:'Week '+it.w+', from '+fmtShort(weekStart(it.w))}));
+    if(!done&&it.d<dayIndex(now()))app(meta,h('span',{class:'late',text:'Was due '+fmt(addDays(START,it.d))}));
+    else app(meta,h('span',{text:(it.d0<it.d?fmtShort(addDays(START,it.d0))+' to '+fmtShort(addDays(START,it.d)):fmt(addDays(START,it.d)))+', week '+it.w}));
   }
   function ext(label,url){return h('a',{class:'link',href:url,target:'_blank',rel:'noopener noreferrer',text:label});}
   var saved=state.checks.links[it.id]||'';
@@ -516,7 +533,7 @@ function itemRow(it,track,cw,showTrack){
     save('custom');save('checks');render();}}));
   var row=h('div',{class:'item'+(done?' done':'')+(ui.pop===it.id?' pop':'')},
     h('input',{type:'checkbox',id:cid,checked:done,onchange:function(e){setDone(it.id,e.target.checked,e.target);}}),
-    h('label',{for:cid,text:it.t}),meta);
+    h('label',{for:cid,text:route()==='today'&&it.full?it.full:it.t}),meta);
   if(ui.noteOpen[it.id]||note)app(row,h('input',{class:'note',type:'text','aria-label':'Note for '+it.t,placeholder:'What went wrong, or what to remember',value:note,onchange:function(e){
     var v=e.target.value.trim();if(v)state.checks.notes[it.id]=v;else delete state.checks.notes[it.id];save('checks');}}));
   if(ui.linkOpen[it.id]){
@@ -533,18 +550,18 @@ function itemRow(it,track,cw,showTrack){
 
 function viewToday(){
   var out=[],idx=dayIndex(now()),ci=curIdx(),cw=curWeek(),act=activity(),st=streak(act);
-  if(ui.selDay==null||ui.selDay>ci)ui.selDay=ci;
+  if(ui.selDay==null)ui.selDay=ci;
   var left=DAYS-1-ci;
   var headline=idx<0?'Starts '+fmtShort(START):idx>=DAYS?'Fourteen weeks done':'Week '+cw+' of '+WEEKS;
   var sub=idx<0?'Your plan runs for 14 weeks, to 12 March.':idx>=DAYS?'The plan ended on 12 March. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go'+(st>1?', and a '+st+'-day streak.':'.');
   var cal=h('div',{class:'cal'+(ui.calShown?'':' intro'),role:'group','aria-label':'Fourteen-week calendar, one square per day'});
   for(var i=0;i<DAYS;i++){(function(i){
     var d=addDays(START,i),k=dkey(d),a=act[k]||0,l=a===0?0:a<3?1:a<6?2:3;
-    cal.appendChild(h('button',{type:'button',style:'--c:'+Math.floor(i/7),'data-l':String(l),class:(i===ci&&idx>=0&&idx<DAYS?'today ':'')+(i===ui.selDay?'sel':''),disabled:i>ci,'aria-label':fmt(d)+(a?', activity logged':', nothing logged'),title:fmt(d),onclick:function(){ui.selDay=i;render();}}));
+    cal.appendChild(h('button',{type:'button',style:'--c:'+Math.floor(i/7),'data-l':String(l),class:(i===ci&&idx>=0&&idx<DAYS?'today ':'')+(i===ui.selDay?'sel':''),'aria-label':fmt(d)+(a?', activity logged':', nothing logged'),title:fmt(d),onclick:function(){ui.selDay=i;render();}}));
   })(i);}
   out.push(h('section',{class:'hero'},
     h('h1',null,headline,h('small',{text:sub})),
-    h('div',null,cal,h('div',{class:'calnote'},h('span',{text:'5 Dec'}),h('span',{text:'Tap a day to edit its log'}),h('span',{text:'12 Mar'})))));
+    h('div',null,cal,h('div',{class:'calnote'},h('span',{text:'5 Dec'}),h('span',{text:'Tap a day for its plan'}),h('span',{text:'12 Mar'})))));
   var lv=level();
   out.push(h('div',{class:'panel level'},
     h('div',{class:'row'},h('strong',{text:'Level '+lv.n+', '+lv.name}),h('span',{class:'ct',text:lv.into+' of '+XP_PER+' XP to level '+(lv.n+1)})),
@@ -586,19 +603,30 @@ function viewToday(){
     h('div',{class:'bar'},h('i',{style:'width:'+Math.min(100,wk/APP_WEEKLY*100)+'%'}))));
   out.push(h('div',{class:'panel'},prog));
 
-  out.push(h('h2',{text:'This week, from '+fmtShort(ws)}));
+  out.push(h('h2',{text:'Plan for '+fmt(sd)}));
+  if(ui.selDay!==ci)out.push(h('p',{style:'margin:0'},h('button',{type:'button',class:'link',text:idx<0?'Back to the first day':'Back to today',onclick:function(){ui.selDay=ci;render();}})));
   var any=false,late=0;
   TRACKS.forEach(function(t){
     var list=allItems(t).filter(function(it){
-      var dv=state.checks.done[it.id];if(!it.w||(dv&&dv!==dkey(now())))return false;if(dv)return true;
-      if(it.w<cw){late++;return ui.showLate;}
-      return it.w===cw;});
+      var dv=state.checks.done[it.id];if(!it.w||(dv&&dv!==sk))return false;if(dv)return true;
+      if(it.d<ui.selDay){late++;return ui.showLate;}
+      return it.d0<=ui.selDay&&ui.selDay<=it.d;});
     if(!list.length)return;any=true;
     out.push(h('div',{class:'grpname',text:t.name}));
     list.forEach(function(it){out.push(itemRow(it,t,cw,false));});
   });
-  if(!any)out.push(h('p',{class:'empty',text:late?'This week’s items are all ticked. Earlier weeks still have open items.':'Everything planned up to this week is ticked.'}));
-  if(late)out.push(h('p',null,h('button',{type:'button',class:'link',text:ui.showLate?'Hide items from earlier weeks':'Show '+late+' open '+(late===1?'item':'items')+' from earlier weeks',onclick:function(){ui.showLate=!ui.showLate;render();}})));
+  if(!any)out.push(h('p',{class:'empty',text:late?'Everything planned for this day is ticked. Earlier days still have open items.':'Nothing is left for this day.'}));
+  if(late)out.push(h('p',null,h('button',{type:'button',class:'link',text:ui.showLate?'Hide items from earlier days':'Show '+late+' open '+(late===1?'item':'items')+' from earlier days',onclick:function(){ui.showLate=!ui.showLate;render();}})));
+  var selW=Math.floor(ui.selDay/7);
+  out.push(h('h2',{text:'Week '+(selW+1)+', day by day'}));
+  for(var wd=0;wd<7;wd++){(function(di){
+    var rows=[],dn=0;
+    TRACKS.forEach(function(t){allItems(t).forEach(function(it){if(it.w&&it.d===di){rows.push([it,t]);if(state.checks.done[it.id])dn++;}});});
+    var key='day|'+di,det=h('details',{class:'grp',open:!!ui.open[key]},h('summary',null,h('span',{text:fmt(addDays(START,di))+(di===dayIndex(now())?', today':'')}),h('span',{text:rows.length?dn+' of '+rows.length+' done':'Catch-up day'})));
+    det.addEventListener('toggle',function(){ui.open[key]=det.open;});
+    rows.forEach(function(x){det.appendChild(itemRow(x[0],x[1],cw,true,'_w'));});
+    out.push(det);
+  })(selW*7+wd);}
 
   out.push(h('h2',{text:'Badges'}));
   var bl=h('div',{class:'badges'});
@@ -632,11 +660,12 @@ function viewTrack(t){
     h('input',{type:'number',min:'1',inputmode:'numeric',value:String(state.log.total),onchange:function(e){var v=Math.round(Number(e.target.value));if(v>0){state.log.total=v;save('log');}render();}}))));
 
   var chips=h('div',{class:'chips',role:'group','aria-label':'Filter items'});
-  [['all','All'],['week','This week'],['todo','Not done'],['revise','To revise']].forEach(function(x){
+  [['all','All'],['today','Today'],['week','This week'],['todo','Not done'],['revise','To revise']].forEach(function(x){
     chips.appendChild(h('button',{type:'button','aria-pressed':f===x[0]?'true':'false',text:x[1],onclick:function(){ui.filter[t.id]=x[0];render();}}));});
   out.push(chips);
 
   function keep(it){
+    if(f==='today'){var ti=curIdx();return it.d0<=ti&&ti<=it.d;}
     if(f==='week')return it.w===cw;
     if(f==='todo')return !state.checks.done[it.id];
     if(f==='revise')return !!state.checks.revise[it.id];
@@ -653,7 +682,7 @@ function viewTrack(t){
     list.forEach(function(it){det.appendChild(itemRow(it,t,cw,false));});
     out.push(det);
   });
-  if(!shown)out.push(h('p',{class:'empty',text:f==='revise'?'Nothing is marked to revise. Use “Mark to revise” on any item you want to come back to.':f==='week'?'Nothing in this track is planned for this week.':f==='todo'?'Every item in this track is ticked.':'No items yet.'}));
+  if(!shown)out.push(h('p',{class:'empty',text:f==='revise'?'Nothing is marked to revise. Use “Mark to revise” on any item you want to come back to.':f==='today'?'Nothing in this track is planned for today.':f==='week'?'Nothing in this track is planned for this week.':f==='todo'?'Every item in this track is ticked.':'No items yet.'}));
 
   var inp=h('input',{type:'text',placeholder:'Add your own item to '+t.name,'aria-label':'New item for '+t.name,maxlength:'140'});
   function add(){var v=inp.value.trim();if(!v)return inp.focus();state.custom.items.push({id:'x'+Date.now().toString(36),track:t.id,title:v});save('custom');render();}
