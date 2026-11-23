@@ -103,6 +103,8 @@ details.grp>summary span:last-child{color:var(--muted);font-weight:500;font-size
 .link{background:none;border:0;padding:.125rem 0;cursor:pointer;color:var(--primary);font-weight:600;font-size:.8125rem}
 .link[aria-pressed="true"]{color:var(--accent)}
 .link.danger{color:var(--danger)}
+a.link{text-decoration:none}
+a.link:hover{text-decoration:underline}
 .note{grid-column:2;width:100%;margin-top:.25rem;padding:.5rem .625rem;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .empty{color:var(--muted);padding:1.5rem 0}
 
@@ -124,8 +126,47 @@ details.grp>summary span:last-child{color:var(--muted);font-weight:500;font-size
 .appcard .who div{font-size:.875rem;color:var(--muted)}
 .appcard .note{grid-column:1/-1;margin:0}
 .appcard .acts{grid-column:1/-1}
+.fade{animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes flash{from{background:color-mix(in srgb,var(--done) 24%,transparent)}to{background:transparent}}
+.item.pop input{animation:pop .4s ease}
+.item.pop label{animation:flash .7s ease;border-radius:4px}
+.panel{box-shadow:0 1px 2px rgb(20 32 58/.04),0 10px 28px -18px rgb(20 32 58/.22)}
+button{transition:transform .12s ease,background-color .15s ease,color .15s ease}
+.btn:hover{filter:brightness(1.08)}
+.btn:active,.step button:active,.chips button:active{transform:scale(.95)}
+.step button:hover{border-color:var(--primary)}
+.cal button:not(:disabled):hover{transform:scale(1.3)}
+.cal.intro button{animation:rise .4s ease both;animation-delay:calc(var(--c)*22ms)}
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center}
+.ring{position:relative;width:min(100%,7.5rem);margin:0 auto}
+.ring svg{display:block;width:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10}
+.ring .tr{stroke:var(--heat0)}
+.ring .pr{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1),stroke .3s}
+.ring.full .pr{stroke:var(--done)}
+.ring .num{position:absolute;inset:0;display:grid;place-content:center;font-family:var(--display);font-weight:800;font-size:1.375rem;line-height:1.1}
+.ring .num small{display:block;font-family:var(--body);font-weight:500;font-size:.75rem;color:var(--muted)}
+.rlab{font-size:.875rem;font-weight:600;margin-top:.5rem}
+.level{display:grid;gap:.5rem;margin-top:1.5rem}
+.level .row{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.level strong{font-family:var(--display);font-size:1.25rem}
+.level .ct,.level .hint{color:var(--muted);font-size:.8125rem}
+.level .bar{grid-column:auto}
+.level .bar i{background:var(--primary)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.75rem}
+.badge{display:flex;gap:.625rem;align-items:center;padding:.625rem .75rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.8125rem;line-height:1.3;color:var(--muted)}
+.badge .ic{font-size:1.5rem;line-height:1}
+.badge b{display:block;font-size:.875rem;color:var(--ink)}
+.badge.locked{opacity:.55;filter:grayscale(1)}
+.toasts{position:fixed;left:50%;bottom:calc(1rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:grid;gap:.5rem;z-index:20;width:min(92vw,24rem);pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:.75rem 1rem;border-radius:10px;font-weight:600;font-size:.9375rem;animation:rise .3s ease both;box-shadow:0 10px 30px -10px rgb(0 0 0/.45);transition:opacity .3s}
+.toast.out{opacity:0}
+.confetti{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:30}
+.bar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.8125rem;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.bar i{transition:width .3s ease}}
 </style>
 </head>
 <body>
@@ -198,6 +239,21 @@ var STATUSES=['Applied','Recruiter call','Online test','Interviewing','Offer','R
 var CLOSED={'Offer':1,'Rejected':1,'No reply':1};
 var APP_WEEKLY=5;
 var HOURS_DAY=6;
+var TRACK_LINKS={
+ 'dsa':[['The A2Z sheet on takeUforward','https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/']],
+ 'system-design':[['System Design in a Hurry, by Hello Interview','https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'],['The System Design Primer','https://github.com/donnemartin/system-design-primer']],
+ 'lld':[['Design patterns in Python, by Refactoring.Guru','https://refactoring.guru/design-patterns/python'],['Pattern code examples in Python','https://github.com/refactoringguru/design-patterns-python']],
+ 'ai':[['The Illustrated Transformer','https://jalammar.github.io/illustrated-transformer/'],['Building effective agents, by Anthropic','https://www.anthropic.com/engineering/building-effective-agents']]
+};
+var RG=['Refactoring.Guru guide','https://refactoring.guru/design-patterns/python'],SDP=['System Design Primer','https://github.com/donnemartin/system-design-primer'],BEA=['Building effective agents','https://www.anthropic.com/engineering/building-effective-agents'];
+var LINKS={l01:['SOLID in Python, on Real Python','https://realpython.com/solid-principles-python/'],l04:RG,l05:RG,l06:RG,l07:RG,l08:RG,l09:RG,l10:RG,s01:SDP,s02:SDP,s03:SDP,s04:SDP,s07:SDP,s08:SDP,a01:['The Illustrated Transformer','https://jalammar.github.io/illustrated-transformer/'],a13:BEA,a14:BEA};
+var QTRACK={'dsa':['Striver A2Z ',''],'system-design':['',' system design interview'],'lld':['',' low level design'],'behavioural':['',' interview answer'],'ai':['',' explained']};
+var QGROUP={'Revision':null,'Mock interviews':null,'Practice':null,'Project deep-dives':null,'Foundations':['',' Python'],'Design patterns':['',' design pattern Python'],'Machine coding, timed 90 minutes':['',' machine coding round'],'AI coding round':['',' Python implementation'],'GenAI system design':['',' GenAI system design interview'],'Python and backend':['',' interview questions']};
+var NOQ={m12:1,m13:1,m14:1};
+TRACKS.forEach(function(t){t.groups.forEach(function(g){
+  var q=g.name in QGROUP?QGROUP[g.name]:QTRACK[t.id],topic=g.name.indexOf('Step ')===0?g.name.split(': ').slice(1).join(': ')+' ':'';
+  g.items.forEach(function(it){it.q=q&&!NOQ[it.id]?q[0]+topic+it.t+q[1]:'';});
+});});
 var SPLIT=[['DSA, from the A2Z sheet','3 hours','dsa'],['System design or LLD, on alternate days','1 hour 15 minutes','system-design'],['AI rounds','1 hour','ai'],['Behavioural and applications','45 minutes','applications']];
 
 /* ---------- dates ---------- */
@@ -214,19 +270,19 @@ function weekStart(w){return addDays(START,(w-1)*7);}
 
 /* ---------- state ---------- */
 var LS='prep-tracker-v1';
-var state={checks:{done:{},revise:{},notes:{}},log:{days:{},total:474},apps:{list:[]},custom:{items:[]}};
+var state={checks:{done:{},revise:{},notes:{},links:{}},log:{days:{},total:474,badges:{}},apps:{list:[]},custom:{items:[]}};
 var DOCS=['checks','log','apps','custom'];
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function norm(name,d){
   d=d&&typeof d==='object'?d:{};
-  if(name==='checks')return {done:d.done||{},revise:d.revise||{},notes:d.notes||{}};
-  if(name==='log')return {days:d.days||{},total:Number(d.total)>0?Number(d.total):474};
+  if(name==='checks')return {done:d.done||{},revise:d.revise||{},notes:d.notes||{},links:d.links||{}};
+  if(name==='log')return {days:d.days||{},total:Number(d.total)>0?Number(d.total):474,badges:d.badges||{}};
   if(name==='apps')return {list:Array.isArray(d.list)?d.list:[]};
   return {items:Array.isArray(d.items)?d.items:[]};
 }
 function hasContent(name){
   var s=state[name];
-  if(name==='checks')return Object.keys(s.done).length+Object.keys(s.revise).length+Object.keys(s.notes).length>0;
+  if(name==='checks')return Object.keys(s.done).length+Object.keys(s.revise).length+Object.keys(s.notes).length+Object.keys(s.links).length>0;
   if(name==='log')return Object.keys(s.days).length>0||s.total!==474;
   if(name==='apps')return s.list.length>0;
   return s.items.length>0;
@@ -244,6 +300,7 @@ function refreshSync(){
   setSync(pending?'Saving':'Saved to your account');
 }
 function save(name){
+  ui.acted=true;
   saveLocal();
   if(!loaded)touched[name]=true;
   if(!store)return;
@@ -264,7 +321,7 @@ function flush(name,retried){
   });
 }
 function connect(){
-  if(!window.claude||typeof window.claude.use!=='function'){loaded=true;return setSync('Saved on this device only');}
+  if(!window.claude||typeof window.claude.use!=='function'){loaded=true;setSync('Saved on this device only');render();return;}
   var slow=setTimeout(function(){if(!loaded)setSync('Still connecting. Changes are kept on this device.',true);},10000);
   Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){
     var db=r[0],user=r[1];
@@ -285,7 +342,7 @@ function connect(){
         refreshSync();
       });
     });
-  }).catch(function(){loaded=true;clearTimeout(slow);if(!store)setSync('Saved on this device only');});
+  }).catch(function(){loaded=true;clearTimeout(slow);if(!store){setSync('Saved on this device only');render();}});
 }
 
 /* ---------- helpers ---------- */
@@ -320,11 +377,86 @@ function streak(act){
   while(act[dkey(d)]){n++;d=addDays(d,-1);}
   return n;
 }
-function setDone(id,on){if(on)state.checks.done[id]=dkey(now());else delete state.checks.done[id];save('checks');render();}
+function setDone(id,on,el){
+  var r=el&&el.getBoundingClientRect?el.getBoundingClientRect():null;
+  if(on){state.checks.done[id]=dkey(now());ui.pop=id;}else delete state.checks.done[id];
+  save('checks');render();
+  if(!on)return;
+  var x=r?r.left+r.width/2:window.innerWidth/2,y=r?r.top+r.height/2:window.innerHeight/2,grp=null;
+  TRACKS.forEach(function(t){t.groups.forEach(function(g){if(g.items.some(function(it){return it.id===id;}))grp=g;});});
+  if(grp&&grp.items.every(function(it){return state.checks.done[it.id];})){confetti(x,y,60);toast('Section complete: '+grp.name);}
+  else confetti(x,y,14);
+}
+
+/* ---------- rewards and motion ---------- */
+var REDUCED=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var DAY_DSA=5,DAY_ITEMS=3,XP_PER=750,NS='http://www.w3.org/2000/svg',ringPrev={},barPrev={};
+var LEVELS=['Warming up','Finding rhythm','Consistent','Sharp','Dangerous','Interview ready','Closing offers','Unstoppable'];
+var toastBox=h('div',{class:'toasts','aria-live':'polite'});document.body.appendChild(toastBox);
+function toast(text){
+  var t=h('div',{class:'toast',text:text});toastBox.appendChild(t);
+  setTimeout(function(){t.className='toast out';setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},350);},3400);
+}
+function confetti(x,y,n){
+  if(REDUCED||!document.body.animate)return;
+  var cols=['var(--primary)','var(--done)','var(--accent-fill)','var(--heat2)'];
+  for(var i=0;i<n;i++){(function(i){
+    var p=h('div',{class:'confetti'});p.style.left=x+'px';p.style.top=y+'px';p.style.background=cols[i%cols.length];
+    document.body.appendChild(p);
+    var a=Math.random()*Math.PI*2,d=40+Math.random()*(n>30?170:80),dx=Math.cos(a)*d,dy=Math.sin(a)*d-50;
+    var an=p.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+dx+'px,'+(dy+130)+'px) rotate('+(Math.random()*720-360)+'deg)',opacity:0}],{duration:700+Math.random()*600,easing:'cubic-bezier(.2,.7,.3,1)'});
+    an.onfinish=function(){if(p.parentNode)p.parentNode.removeChild(p);};
+  })(i);}
+}
+function xp(){var x=solved()*5+Object.keys(state.checks.done).length*10+state.apps.list.length*8,k;for(k in state.log.days)x+=Math.round((Number(state.log.days[k].hours)||0)*2);return x;}
+function level(){var x=xp(),n=Math.floor(x/XP_PER);return {n:n+1,name:LEVELS[Math.min(n,LEVELS.length-1)],into:x%XP_PER,xp:x};}
+function badges(){
+  var act=activity(),st=streak(act),sv=solved(),dn=Object.keys(state.checks.done),apps=state.apps.list,k,six=false;
+  for(k in state.log.days)if((Number(state.log.days[k].hours)||0)>=HOURS_DAY)six=true;
+  function has(list){return dn.some(function(id){return list.indexOf(id)>=0;});}
+  var MOCKS=['s30','s31','s32','s33','s34','b31','b32','dr_3'],ROUNDS=['m01','m02','m03','m04','m05','m06','m07','m08','m09','m10','m11','m12','m13','m14'];
+  return [
+    ['first','🌱','First tick','Complete any item',dn.length>=1],
+    ['streak3','🔥','3-day streak','Log three days in a row',st>=3],
+    ['streak7','⚡','7-day streak','Log seven days in a row',st>=7],
+    ['streak30','🏔️','30-day streak','Log thirty days in a row',st>=30],
+    ['six','⏱️','Full day','Log six hours in one day',six],
+    ['p50','🧩','50 problems','Solve 50 DSA problems',sv>=50],
+    ['p150','🧠','150 problems','Solve 150 DSA problems',sv>=150],
+    ['p300','🚀','300 problems','Solve 300 DSA problems',sv>=300],
+    ['pall','🏆','Sheet complete','Solve every problem in the sheet',sv>=state.log.total],
+    ['round','⌨️','First timed round','Finish a machine coding round',has(ROUNDS)],
+    ['mock','🎤','First mock','Finish any mock interview',has(MOCKS)],
+    ['app1','📨','First application','Add an application',apps.length>=1],
+    ['app10','📬','10 applications','Add ten applications',apps.length>=10],
+    ['intv','🤝','Interview stage','Move an application to Interviewing',apps.some(function(a){return a.status==='Interviewing'||a.status==='Offer';})],
+    ['offer','🎉','Offer','Mark an application as an offer',apps.some(function(a){return a.status==='Offer';})]
+  ];
+}
+function awardBadges(){
+  if(!loaded)return;
+  var fresh=[],quiet=!ui.acted,lv=level();
+  badges().forEach(function(b){if(b[4]&&!state.log.badges[b[0]]){state.log.badges[b[0]]=dkey(now());fresh.push(b);}});
+  if(fresh.length){
+    save('log');
+    if(!quiet){fresh.forEach(function(b){toast('Badge earned: '+b[2]+' '+b[1]);});confetti(window.innerWidth/2,window.innerHeight/2,70);}
+  }
+  if(!quiet&&ui.lastLevel&&lv.n>ui.lastLevel)toast('Level '+lv.n+': '+lv.name);
+  ui.lastLevel=lv.n;
+}
+function ring(key,label,val,target){
+  var R=42,C=2*Math.PI*R,p=Math.min(1,target?val/target:0),prev=ringPrev[key]||0;ringPrev[key]=p;
+  var svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
+  function circ(cls){var c=document.createElementNS(NS,'circle');c.setAttribute('cx','50');c.setAttribute('cy','50');c.setAttribute('r',String(R));c.setAttribute('class',cls);return c;}
+  var pr=circ('pr');pr.style.strokeDasharray=String(C);pr.style.strokeDashoffset=String(C*(1-prev));
+  svg.appendChild(circ('tr'));svg.appendChild(pr);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){pr.style.strokeDashoffset=String(C*(1-p));});});
+  return h('div',null,h('div',{class:'ring'+(p>=1?' full':''),role:'img','aria-label':label+': '+val+' of '+target},svg,h('div',{class:'num'},String(val),h('small',{text:'of '+target}))),h('div',{class:'rlab',text:label}));
+}
 
 /* ---------- views ---------- */
 var view=document.getElementById('view'),tabsEl=document.getElementById('tabs');
-var ui={filter:{},open:{},selDay:null,showLate:false,noteOpen:{},confirm:null,appErr:''};
+var ui={pop:null,acted:false,lastRoute:null,lastLevel:0,calShown:false,filter:{},open:{},selDay:null,showLate:false,noteOpen:{},linkOpen:{},linkErr:null,confirm:null,appErr:''};
 function route(){var r=location.hash.replace('#','');return TABS.some(function(t){return t[0]===r;})?r:'today';}
 
 function renderTabs(r){
@@ -333,11 +465,21 @@ function renderTabs(r){
 }
 function render(){
   var r=route(),y=window.scrollY,nodes;
+  awardBadges();
   renderTabs(r);
   if(r==='today')nodes=viewToday();
   else if(r==='applications')nodes=viewApps();
   else nodes=viewTrack(TRACKS.filter(function(t){return t.id===r;})[0]);
   view.textContent='';nodes.forEach(function(n){app(view,n);});
+  Array.prototype.forEach.call(view.querySelectorAll('.bar i'),function(el,i){
+    var k=r+':'+i,target=el.style.width,prev=barPrev[k]||'0%';barPrev[k]=target;
+    if(prev===target)return;
+    el.style.transition='none';el.style.width=prev;
+    requestAnimationFrame(function(){requestAnimationFrame(function(){el.style.transition='';el.style.width=target;});});
+  });
+  view.classList.remove('fade');
+  if(r!==ui.lastRoute){void view.offsetWidth;view.classList.add('fade');}
+  ui.lastRoute=r;ui.pop=null;if(r==='today')ui.calShown=true;
   window.scrollTo(0,y);
 }
 
@@ -359,18 +501,33 @@ function itemRow(it,track,cw,showTrack){
     if(!done&&it.w<cw)app(meta,h('span',{class:'late',text:'Due week '+it.w}));
     else app(meta,h('span',{text:'Week '+it.w+', from '+fmtShort(weekStart(it.w))}));
   }
+  function ext(label,url){return h('a',{class:'link',href:url,target:'_blank',rel:'noopener noreferrer',text:label});}
+  var saved=state.checks.links[it.id]||'';
+  if(LINKS[it.id])app(meta,ext(LINKS[it.id][0],LINKS[it.id][1]));
+  if(it.q){app(meta,ext('Videos','https://www.youtube.com/results?search_query='+encodeURIComponent(it.q)));app(meta,ext('Articles','https://www.google.com/search?q='+encodeURIComponent(it.q)));}
+  if(saved.indexOf('https://')===0)app(meta,ext('Your saved link',saved));
   app(meta,h('button',{type:'button',class:'link','aria-pressed':rev?'true':'false',text:rev?'Marked to revise':'Mark to revise',onclick:function(){
     if(rev)delete state.checks.revise[it.id];else state.checks.revise[it.id]=true;save('checks');render();}}));
   app(meta,h('button',{type:'button',class:'link',text:note?'Edit note':'Add note',onclick:function(){ui.noteOpen[it.id]=!ui.noteOpen[it.id];render();}}));
+  app(meta,h('button',{type:'button',class:'link',text:saved?'Change saved link':'Save a link',onclick:function(){ui.linkOpen[it.id]=!ui.linkOpen[it.id];render();}}));
   if(it.custom)app(meta,h('button',{type:'button',class:'link danger',text:'Remove',onclick:function(){
     state.custom.items=state.custom.items.filter(function(x){return x.id!==it.id;});
-    delete state.checks.done[it.id];delete state.checks.revise[it.id];delete state.checks.notes[it.id];
+    delete state.checks.done[it.id];delete state.checks.revise[it.id];delete state.checks.notes[it.id];delete state.checks.links[it.id];
     save('custom');save('checks');render();}}));
-  var row=h('div',{class:'item'+(done?' done':'')},
-    h('input',{type:'checkbox',id:cid,checked:done,onchange:function(e){setDone(it.id,e.target.checked);}}),
+  var row=h('div',{class:'item'+(done?' done':'')+(ui.pop===it.id?' pop':'')},
+    h('input',{type:'checkbox',id:cid,checked:done,onchange:function(e){setDone(it.id,e.target.checked,e.target);}}),
     h('label',{for:cid,text:it.t}),meta);
   if(ui.noteOpen[it.id]||note)app(row,h('input',{class:'note',type:'text','aria-label':'Note for '+it.t,placeholder:'What went wrong, or what to remember',value:note,onchange:function(e){
     var v=e.target.value.trim();if(v)state.checks.notes[it.id]=v;else delete state.checks.notes[it.id];save('checks');}}));
+  if(ui.linkOpen[it.id]){
+    app(row,h('input',{class:'note',type:'url','aria-label':'Link for '+it.t,placeholder:'Paste the video, article or notes link you want to keep',value:saved,onchange:function(e){
+      var v=e.target.value.trim();
+      if(!v){delete state.checks.links[it.id];ui.linkErr=null;ui.linkOpen[it.id]=false;}
+      else if(v.indexOf('https://')===0&&v.indexOf(' ')<0){state.checks.links[it.id]=v;ui.linkErr=null;ui.linkOpen[it.id]=false;}
+      else{ui.linkErr=it.id;render();return;}
+      save('checks');render();}}));
+    if(ui.linkErr===it.id)app(row,h('p',{class:'err',style:'grid-column:2;margin:0',role:'alert',text:'Paste a full link that starts with https://'}));
+  }
   return row;
 }
 
@@ -380,21 +537,32 @@ function viewToday(){
   var left=DAYS-1-ci;
   var headline=idx<0?'Starts '+fmtShort(START):idx>=DAYS?'Fourteen weeks done':'Week '+cw+' of '+WEEKS;
   var sub=idx<0?'Your plan runs for 14 weeks, to 12 March.':idx>=DAYS?'The plan ended on 12 March. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go'+(st>1?', and a '+st+'-day streak.':'.');
-  var cal=h('div',{class:'cal',role:'group','aria-label':'Fourteen-week calendar, one square per day'});
+  var cal=h('div',{class:'cal'+(ui.calShown?'':' intro'),role:'group','aria-label':'Fourteen-week calendar, one square per day'});
   for(var i=0;i<DAYS;i++){(function(i){
     var d=addDays(START,i),k=dkey(d),a=act[k]||0,l=a===0?0:a<3?1:a<6?2:3;
-    cal.appendChild(h('button',{type:'button','data-l':String(l),class:(i===ci&&idx>=0&&idx<DAYS?'today ':'')+(i===ui.selDay?'sel':''),disabled:i>ci,'aria-label':fmt(d)+(a?', activity logged':', nothing logged'),title:fmt(d),onclick:function(){ui.selDay=i;render();}}));
+    cal.appendChild(h('button',{type:'button',style:'--c:'+Math.floor(i/7),'data-l':String(l),class:(i===ci&&idx>=0&&idx<DAYS?'today ':'')+(i===ui.selDay?'sel':''),disabled:i>ci,'aria-label':fmt(d)+(a?', activity logged':', nothing logged'),title:fmt(d),onclick:function(){ui.selDay=i;render();}}));
   })(i);}
   out.push(h('section',{class:'hero'},
     h('h1',null,headline,h('small',{text:sub})),
     h('div',null,cal,h('div',{class:'calnote'},h('span',{text:'5 Dec'}),h('span',{text:'Tap a day to edit its log'}),h('span',{text:'12 Mar'})))));
+  var lv=level();
+  out.push(h('div',{class:'panel level'},
+    h('div',{class:'row'},h('strong',{text:'Level '+lv.n+', '+lv.name}),h('span',{class:'ct',text:lv.into+' of '+XP_PER+' XP to level '+(lv.n+1)})),
+    h('div',{class:'bar'},h('i',{style:'width:'+(lv.into/XP_PER*100)+'%'})),
+    h('div',{class:'hint',text:'Earn 10 XP for each item, 5 for each DSA problem, 8 for each application and 2 for each hour logged.'})));
 
   var sd=addDays(START,ui.selDay),sk=dkey(sd),day=state.log.days[sk]||{};
-  function setDay(field,v){var o=state.log.days[sk]||{};o[field]=v;if(!(Number(o.dsa)>0)&&!(Number(o.hours)>0))delete state.log.days[sk];else state.log.days[sk]=o;save('log');render();}
+  function setDay(field,v){
+    var o=state.log.days[sk]||{},was=Number(o[field])||0,goal=field==='dsa'?DAY_DSA:HOURS_DAY;
+    o[field]=v;if(!(Number(o.dsa)>0)&&!(Number(o.hours)>0))delete state.log.days[sk];else state.log.days[sk]=o;
+    save('log');render();
+    if(was<goal&&v>=goal){toast(field==='dsa'?'Daily DSA goal hit: '+goal+' problems':'Full '+goal+'-hour day logged');confetti(window.innerWidth/2,window.innerHeight/3,50);}
+  }
+  var ticked=0,tid;for(tid in state.checks.done)if(state.checks.done[tid]===sk)ticked++;
   out.push(h('h2',{text:'Log for '+fmt(sd)}));
-  out.push(h('div',{class:'panel logrow'},
+  out.push(h('div',{class:'panel'},h('div',{class:'rings'},ring('dsa','DSA problems',Number(day.dsa)||0,DAY_DSA),ring('hrs','Hours',Number(day.hours)||0,HOURS_DAY),ring('itm','Items ticked',ticked,DAY_ITEMS)),h('div',{class:'logrow',style:'margin-top:1.25rem;justify-content:center'},
     stepper('DSA problems solved',Number(day.dsa)||0,1,function(v){setDay('dsa',v);}),
-    stepper('Hours studied, aiming for '+HOURS_DAY,Number(day.hours)||0,0.5,function(v){setDay('hours',v);})));
+    stepper('Hours studied, aiming for '+HOURS_DAY,Number(day.hours)||0,0.5,function(v){setDay('hours',v);}))));
   out.push(h('h2',{text:'A '+HOURS_DAY+'-hour day'}));
   var sp=h('div',{class:'panel prog'});
   SPLIT.forEach(function(s){sp.appendChild(h('a',{href:'#'+s[2]},h('span',{class:'nm',text:s[0]}),h('span',{class:'ct',text:s[1]})));});
@@ -422,7 +590,7 @@ function viewToday(){
   var any=false,late=0;
   TRACKS.forEach(function(t){
     var list=allItems(t).filter(function(it){
-      if(state.checks.done[it.id]||!it.w)return false;
+      var dv=state.checks.done[it.id];if(!it.w||(dv&&dv!==dkey(now())))return false;if(dv)return true;
       if(it.w<cw){late++;return ui.showLate;}
       return it.w===cw;});
     if(!list.length)return;any=true;
@@ -432,6 +600,11 @@ function viewToday(){
   if(!any)out.push(h('p',{class:'empty',text:late?'This week’s items are all ticked. Earlier weeks still have open items.':'Everything planned up to this week is ticked.'}));
   if(late)out.push(h('p',null,h('button',{type:'button',class:'link',text:ui.showLate?'Hide items from earlier weeks':'Show '+late+' open '+(late===1?'item':'items')+' from earlier weeks',onclick:function(){ui.showLate=!ui.showLate;render();}})));
 
+  out.push(h('h2',{text:'Badges'}));
+  var bl=h('div',{class:'badges'});
+  badges().forEach(function(b){var got=b[4]||state.log.badges[b[0]];
+    bl.appendChild(h('div',{class:'badge'+(got?'':' locked')},h('span',{class:'ic','aria-hidden':'true',text:b[1]}),h('span',null,h('b',{text:b[2]}),got?'Earned':b[3])));});
+  out.push(bl);
   out.push(h('footer',null,
     h('p',{text:'Progress is saved to your account when the page can reach it, and always on this device.'}),
     h('button',{type:'button',class:'link danger',text:ui.confirm==='reset'?'Tap again to clear everything':'Clear all progress',onclick:function(){
@@ -444,6 +617,11 @@ function viewTrack(t){
   var out=[],cw=curWeek(),c=counts(t),f=ui.filter[t.id]||'all';
   out.push(h('h2',{style:'margin-top:.25rem',text:t.name}));
   out.push(h('p',{class:'sub',text:t.intro}));
+  if(TRACK_LINKS[t.id]){
+    var sh=h('p',{class:'sub'},'Start here: ');
+    TRACK_LINKS[t.id].forEach(function(l,i){if(i)app(sh,' and ');app(sh,h('a',{class:'link',style:'font-size:inherit',href:l[1],target:'_blank',rel:'noopener noreferrer',text:l[0]}));});
+    app(sh,'.');out.push(sh);
+  }
   var prog=h('div',{class:'prog',style:'margin-top:1rem'},h('a',{href:'#'+t.id},h('span',{class:'nm',text:t.id==='dsa'?'Sections done':'Done'}),h('span',{class:'ct',text:c.done+' of '+c.total}),h('div',{class:'bar'},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));
   if(t.id==='dsa'){
     var sv=solved(),total=state.log.total;
@@ -506,6 +684,7 @@ function viewApps(){
     if(!company){ui.appErr='Add a company name to save this application.';render();return;}
     ui.appErr='';
     state.apps.list.push({id:'a'+Date.now().toString(36),company:company,role:fr.value.trim(),kind:fk.value,source:fs.value,date:fd.value||dkey(now()),status:'Applied',note:''});
+    toast('Application added: '+company);confetti(window.innerWidth/2,window.innerHeight/3,24);
     save('apps');render();
   }
   out.push(h('h2',{text:'Add an application'}));
