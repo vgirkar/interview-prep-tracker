@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interview prep tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F9; --surface:#FFFFFF; --ink:#14203A; --muted:#56627C; --line:#D6DCE8;
+  --primary:#2B4BD6; --on-primary:#FFFFFF; --done:#0B7F62; --accent:#9A6200; --accent-fill:#F2A20C;
+  --heat0:#E1E6F0; --heat1:#B9C6F5; --heat2:#7C93EA; --heat3:#2B4BD6; --danger:#B3261E;
+  --display:"Bricolage Grotesque","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1424; --surface:#161E33; --ink:#E7EBF6; --muted:#9AA6C0; --line:#2A3550;
+    --primary:#93A8FF; --on-primary:#0E1424; --done:#53D3AB; --accent:#FFC14D; --accent-fill:#FFC14D;
+    --heat0:#1E2740; --heat1:#2F3F7A; --heat2:#5069C8; --heat3:#93A8FF; --danger:#FF8A80;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1424; --surface:#161E33; --ink:#E7EBF6; --muted:#9AA6C0; --line:#2A3550;
+  --primary:#93A8FF; --on-primary:#0E1424; --done:#53D3AB; --accent:#FFC14D; --accent-fill:#FFC14D;
+  --heat0:#1E2740; --heat1:#2F3F7A; --heat2:#5069C8; --heat3:#93A8FF; --danger:#FF8A80;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.5;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+.wrap{max-width:60rem;margin:0 auto;padding:0 1rem}
+
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding-top:1rem;padding-bottom:.25rem;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
+.sync{font-size:.8125rem;color:var(--muted)}
+.sync.warn{color:var(--accent)}
+
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs .wrap{display:flex;gap:.25rem;overflow-x:auto;scrollbar-width:none;padding-top:.5rem;padding-bottom:0}
+.tabs .wrap::-webkit-scrollbar{display:none}
+.tabs a{flex:none;padding:.5rem .75rem .625rem;text-decoration:none;color:var(--muted);font-weight:600;font-size:.9375rem;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--primary)}
+
+main{padding-top:1.25rem;padding-bottom:4rem}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2.5rem,9vw,4.25rem);line-height:.95;letter-spacing:-.035em;margin:0}
+h1 small{display:block;font-family:var(--body);font-weight:500;font-size:1rem;letter-spacing:0;line-height:1.5;color:var(--muted);margin-top:.75rem}
+h2{font-family:var(--display);font-weight:700;font-size:1.375rem;letter-spacing:-.015em;margin:2.25rem 0 .75rem}
+.sub{color:var(--muted);margin:.25rem 0 0;max-width:38rem}
+
+.hero{display:grid;gap:1.5rem;align-items:end}
+@media (min-width:46rem){.hero{grid-template-columns:1fr auto}}
+.cal{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;width:100%;max-width:23rem}
+.cal button{aspect-ratio:1;min-width:0;padding:0;border:0;border-radius:3px;background:var(--heat0);cursor:pointer}
+.cal button[data-l="1"]{background:var(--heat1)}
+.cal button[data-l="2"]{background:var(--heat2)}
+.cal button[data-l="3"]{background:var(--heat3)}
+.cal button:disabled{opacity:.45;cursor:default}
+.cal button.today{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent-fill)}
+.cal button.sel{outline:2px solid var(--ink);outline-offset:1px}
+.calnote{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-top:.5rem;max-width:23rem}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem}
+.logrow{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:center}
+.step{display:flex;align-items:center;gap:.5rem}
+.step span.lab{font-weight:600;margin-right:.25rem}
+.step button{width:2.5rem;height:2.5rem;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:1.25rem;line-height:1;cursor:pointer}
+.step input{width:4rem;height:2.5rem;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-family:var(--display);font-weight:700;font-size:1.125rem}
+
+.prog{display:grid;gap:.875rem}
+.prog a{display:grid;grid-template-columns:1fr auto;gap:.25rem .75rem;text-decoration:none;color:inherit}
+.prog .nm{font-weight:600}
+.prog .ct{color:var(--muted);font-size:.875rem;text-align:right}
+.bar{grid-column:1/-1;position:relative;height:8px;border-radius:4px;background:var(--heat0)}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--done)}
+.bar b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--accent-fill)}
+
+.chips{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.chips button{padding:.375rem .875rem;border-radius:999px;border:1px solid var(--line);background:transparent;cursor:pointer;font-weight:600;font-size:.875rem;color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+details.grp{border-top:1px solid var(--line)}
+details.grp:last-of-type{border-bottom:1px solid var(--line)}
+details.grp>summary{display:flex;justify-content:space-between;gap:1rem;padding:.875rem 0;cursor:pointer;font-weight:700;list-style:none}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary span:last-child{color:var(--muted);font-weight:500;font-size:.875rem;white-space:nowrap}
+.grpname{font-weight:700;margin:1.25rem 0 .25rem}
+
+.item{display:grid;grid-template-columns:auto 1fr;gap:.125rem .75rem;padding:.625rem 0;border-top:1px dashed var(--line)}
+.item input[type=checkbox]{width:1.375rem;height:1.375rem;margin:.0625rem 0 0;accent-color:var(--done);cursor:pointer}
+.item label{cursor:pointer}
+.item.done label{color:var(--muted);text-decoration:line-through}
+.meta{grid-column:2;display:flex;flex-wrap:wrap;gap:.25rem .875rem;align-items:center;font-size:.8125rem;color:var(--muted)}
+.meta .late{color:var(--accent);font-weight:600}
+.link{background:none;border:0;padding:.125rem 0;cursor:pointer;color:var(--primary);font-weight:600;font-size:.8125rem}
+.link[aria-pressed="true"]{color:var(--accent)}
+.link.danger{color:var(--danger)}
+.note{grid-column:2;width:100%;margin-top:.25rem;padding:.5rem .625rem;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.empty{color:var(--muted);padding:1.5rem 0}
+
+.addrow{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+.field{flex:1 1 11rem;min-width:0;display:grid;gap:.25rem;font-size:.8125rem;font-weight:600;color:var(--muted)}
+.field input,.field select,.addrow>input,.appcard select{height:2.75rem;padding:0 .75rem;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:400;font-size:1rem;min-width:0;width:100%}
+.addrow>input{flex:1 1 12rem;width:auto}
+.btn{height:2.75rem;padding:0 1.125rem;border:0;border-radius:8px;background:var(--primary);color:var(--on-primary);font-weight:700;cursor:pointer;align-self:end}
+.btn.quiet{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.err{color:var(--danger);font-size:.875rem;margin:.5rem 0 0}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));gap:1rem;margin:1rem 0 0}
+.stats div{border-left:3px solid var(--primary);padding-left:.75rem}
+.stats strong{display:block;font-family:var(--display);font-size:1.75rem;line-height:1.1}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.appcard{display:grid;gap:.5rem .75rem;padding:.875rem 0;border-top:1px solid var(--line);grid-template-columns:1fr}
+@media (min-width:40rem){.appcard{grid-template-columns:1fr 12rem}}
+.appcard .who strong{font-size:1.0625rem}
+.appcard .who div{font-size:.875rem;color:var(--muted)}
+.appcard .note{grid-column:1/-1;margin:0}
+.appcard .acts{grid-column:1/-1}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.8125rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .3s ease}}
+</style>
+</head>
+<body>
+<header class="top wrap">
+  <div class="brand">Interview prep, 5 December to 12 March</div>
+  <div class="sync" id="sync" role="status">Connecting</div>
+</header>
+<nav class="tabs" aria-label="Sections"><div class="wrap" id="tabs"></div></nav>
+<main class="wrap" id="view"></main>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- plan ---------- */
+var START=new Date(2026,11,5), DAYS=98, WEEKS=14, DSA_DAYS=95, MS=86400000;
+var WMAP=[0,1,2,3,4,5,6,6,7,8,9,10,11,12,13,14,14];
+function I(id,t,w){return {id:id,t:t,w:WMAP[w]};}
+function G(name,items){return {name:name,items:items};}
+
+var TRACKS=[
+{id:'dsa',name:'DSA',intro:'Sections of the A2Z sheet, in the order that suits interviews. Tick a section when every problem in it is done on TUF+, and log your daily solved count on the Today page.',groups:[
+ G('Step 1: Learn the basics',[I('d1_1','Things to know in your language',1),I('d1_2','Build up logical thinking (patterns)',1),I('d1_3','Learn the standard library and collections',1),I('d1_4','Basic maths',1),I('d1_5','Basic recursion',1),I('d1_6','Basic hashing',1)]),
+ G('Step 2: Sorting techniques',[I('d2_1','Sorting I',1),I('d2_2','Sorting II',1)]),
+ G('Step 3: Arrays',[I('d3_1','Easy',1),I('d3_2','Medium',2),I('d3_3','Hard',2)]),
+ G('Step 4: Binary search',[I('d4_1','Binary search on 1D arrays',3),I('d4_2','Binary search on answers',3),I('d4_3','Binary search on 2D arrays',3)]),
+ G('Step 6: Linked lists',[I('d6_1','Learn singly linked lists',4),I('d6_2','Learn doubly linked lists',4),I('d6_3','Medium problems, singly linked',4),I('d6_4','Medium problems, doubly linked',4),I('d6_5','Hard problems',4)]),
+ G('Step 9: Stacks and queues',[I('d9_1','Learning',5),I('d9_2','Prefix, infix and postfix conversion',5),I('d9_3','Monotonic stack and queue problems',5),I('d9_4','Implementation problems',5)]),
+ G('Step 10: Sliding window and two pointers',[I('d10_1','Medium problems',6),I('d10_2','Hard problems',6)]),
+ G('Step 13: Binary trees',[I('d13_1','Traversals',6),I('d13_2','Medium problems',7),I('d13_3','Hard problems',7)]),
+ G('Step 14: Binary search trees',[I('d14_1','Concepts',8),I('d14_2','Practice problems',8)]),
+ G('Step 11: Heaps',[I('d11_1','Learning',8),I('d11_2','Medium problems',8),I('d11_3','Hard problems',8)]),
+ G('Step 15: Graphs',[I('d15_1','Learning',9),I('d15_2','BFS and DFS problems',9),I('d15_3','Topological sort and problems',9),I('d15_4','Shortest path algorithms and problems',10),I('d15_5','Minimum spanning tree and disjoint set',10),I('d15_6','Other algorithms',10)]),
+ G('Step 7: Recursion',[I('d7_1','Get a strong hold',11),I('d7_2','Subsequences pattern',11),I('d7_3','Trying out all combinations, hard',11)]),
+ G('Step 5: Strings, basic and medium',[I('d5_1','Basic and easy problems',11),I('d5_2','Medium problems',11)]),
+ G('Step 16: Dynamic programming',[I('d16_1','Introduction',12),I('d16_2','1D DP',12),I('d16_3','2D and 3D DP, DP on grids',12),I('d16_4','DP on subsequences',12),I('d16_5','DP on strings',13),I('d16_6','DP on stocks',13),I('d16_7','DP on longest increasing subsequence',13),I('d16_8','Partition DP',13),I('d16_9','DP on squares',13)]),
+ G('Step 12: Greedy',[I('d12_1','Easy problems',14),I('d12_2','Medium and hard problems',14)]),
+ G('Step 8: Bit manipulation',[I('d8_1','Learn bit manipulation',14),I('d8_2','Interview problems',14),I('d8_3','Advanced maths',14)]),
+ G('Step 17: Tries',[I('d17_1','Theory',15),I('d17_2','Problems',15)]),
+ G('Step 18: Strings, hard',[I('d18_1','Hard problems',15)]),
+ G('Revision',[I('dr_1','Redo every problem marked for revision',15),I('dr_2','Three timed mixed sets, two problems in 60 minutes',16),I('dr_3','Two mock DSA interviews',16)])
+]},
+{id:'system-design',name:'System design',intro:'Fundamentals first, then one classic design a week, written out rather than read.',groups:[
+ G('Fundamentals',[I('s01','Scaling basics: load balancing, caching, CDNs',1),I('s02','Databases: SQL and NoSQL, indexing',1),I('s03','Replication, partitioning and sharding',2),I('s04','CAP theorem and consistency models',2),I('s05','Message queues and event-driven design',3),I('s06','API design: REST, gRPC, pagination, idempotency',3),I('s07','Consistent hashing',4),I('s08','Back-of-envelope estimation',4)]),
+ G('Classic designs',[I('s10','URL shortener',2),I('s11','Rate limiter',3),I('s12','News feed',4),I('s13','Chat system',5),I('s14','Notification system',6),I('s15','Payments system',7),I('s16','Search autocomplete',8),I('s17','Web crawler',9),I('s18','Video streaming',10),I('s19','Ride hailing',11),I('s20','File storage and sync',12),I('s21','Ticket booking',13),I('s22','Distributed cache',13),I('s23','Job scheduler',14),I('s24','Metrics and monitoring',14)]),
+ G('Mock interviews',[I('s30','Mock design interview 1',8),I('s31','Mock design interview 2',11),I('s32','Mock design interview 3',14),I('s33','Mock design interview 4',15),I('s34','Mock design interview 5',16)])
+]},
+{id:'lld',name:'LLD and machine coding',intro:'Patterns in Python, then classic problems, then timed 90-minute rounds on Saturdays. A round counts only if the code runs.',groups:[
+ G('Foundations',[I('l01','SOLID principles',1),I('l02','OOP in Python: abstract base classes, dataclasses, enums',1),I('l03','Class diagrams and thinking aloud',2)]),
+ G('Design patterns',[I('l04','Strategy',2),I('l05','Factory',2),I('l06','Observer',3),I('l07','State',3),I('l08','Decorator',4),I('l09','Builder',4),I('l10','Singleton',4)]),
+ G('LLD problems',[I('l11','Parking lot',3),I('l12','LRU cache',4),I('l13','Vending machine',5),I('l14','Logger framework',6),I('l15','Movie ticket booking',7),I('l16','Tic-tac-toe',8),I('l17','Snake and ladder',9),I('l18','Library management',10),I('l19','Notification service',11),I('l20','Elevator',12)]),
+ G('Machine coding, timed 90 minutes',[I('m01','Splitwise',2),I('m02','Elevator system',4),I('m03','Rate limiter',5),I('m04','Booking system',6),I('m05','In-memory key-value store',7),I('m06','Snake and ladder',8),I('m07','Parking lot',9),I('m08','Task scheduler',10),I('m09','Food ordering',11),I('m10','Pub-sub system',12),I('m11','Cab booking',13),I('m12','Your weakest round, redone',14),I('m13','Unseen problem, timed',15),I('m14','Unseen problem, timed',16)])
+]},
+{id:'behavioural',name:'Behavioural',intro:'Write each answer once, then say it aloud until it takes two minutes or less.',groups:[
+ G('Core answers',[I('b01','Tell me about yourself, in 60 seconds',1),I('b02','Why you’re leaving your current role',1),I('b05','Walk through your resume in three minutes',2),I('b03','Why this company and this role',2),I('b04','Strengths and one real weakness',3)]),
+ G('Stories, in STAR format',[I('b10','A project you owned end to end',1),I('b11','The hardest technical problem you solved',2),I('b12','A conflict with a teammate or stakeholder',3),I('b13','A failure and what you changed after it',4),I('b14','Delivering against a tight deadline',5),I('b15','Disagreeing with a decision',6),I('b16','Leading or mentoring others',7),I('b17','Working through ambiguity',8),I('b18','Going further for a customer or user',9),I('b19','A decision with real trade-offs',10)]),
+ G('Closing the loop',[I('b20','Questions to ask interviewers',4),I('b21','Answers on salary and notice period',5),I('b22','Offer negotiation plan',10)]),
+ G('Practice',[I('b30','Record yourself telling every story',6),I('b31','Mock behavioural interview 1',9),I('b32','Mock behavioural interview 2',13),I('b33','Full run-through of every answer',15)])
+]},
+{id:'ai',name:'AI rounds',intro:'Theory questions, the AI coding round, GenAI system design, and the Python and backend questions that tech rounds draw from your resume.',groups:[
+ G('Theory',[I('a01','Transformers and attention',1),I('a02','Tokenisation and context windows',1),I('a03','Sampling: temperature, top-p, top-k',2),I('a04','Embeddings and similarity',2),I('a05','Prompting: few-shot, chain of thought, structured outputs',3),I('a06','RAG pipeline, end to end',3),I('a07','Chunking strategies',4),I('a08','Vector databases and ANN indexes (HNSW, IVF)',4),I('a09','Hybrid search and reranking',5),I('a10','RAG evaluation: faithfulness, relevance, recall',5),I('a11','LLM evals and LLM-as-judge',6),I('a12','Function calling and tool use',6),I('a13','Agents: ReAct, planning, memory',7),I('a14','Multi-agent orchestration and state',7),I('a15','Model Context Protocol',8),I('a16','Fine-tuning versus RAG, LoRA and PEFT',8),I('a17','Quantisation and model serving',9),I('a18','Cost and latency levers: caching, routing, streaming',9),I('a19','Guardrails and prompt injection',10),I('a20','Hallucination: causes and controls',10),I('a21','Observability and tracing for LLM apps',11),I('a22','ML basics: bias and variance, overfitting, precision and recall',11),I('a23','Voice pipelines: speech-to-text, text-to-speech, turn-taking',12)]),
+ G('AI coding round',[I('c01','Cosine similarity and top-k retrieval from scratch',2),I('c02','Text chunker with overlap',3),I('c03','BM25 from scratch',4),I('c04','Mini RAG pipeline, end to end',5),I('c05','Tool-calling agent loop without a framework',6),I('c06','Streaming chat endpoint in FastAPI',7),I('c07','Async batch LLM caller with retries and backoff',8),I('c08','Structured output parser with validation and retry',9),I('c09','Cache for LLM calls, exact and semantic',10),I('c10','Token-budgeted conversation memory',11),I('c11','Eval harness for a RAG system',12),I('c12','Self-attention in NumPy',13)]),
+ G('GenAI system design',[I('g01','RAG system at scale',5),I('g02','Agent workflow platform',7),I('g03','LLM evals and monitoring',9),I('g04','Voice agent pipeline',10),I('g05','Customer support bot with guardrails',11),I('g06','Multi-tenant document Q&A',12),I('g07','LLM gateway: routing, caching, rate limits',13),I('g08','Semantic search over a large catalogue',14)]),
+ G('Python and backend',[I('p01','GIL, threads and multiprocessing',1),I('p02','asyncio and the event loop',2),I('p03','Generators, iterators and decorators',3),I('p04','Context managers and memory management',4),I('p05','FastAPI: dependency injection, async, Pydantic',5),I('p06','Auth: JWT and OAuth',6),I('p07','SQL: joins and window functions',7),I('p08','SQL: indexing, transactions, isolation',8),I('p09','Caching and idempotency',9),I('p10','Docker and CI/CD',10),I('p11','The AWS services you’ve used',11)]),
+ G('Project deep-dives',[I('j01','RAG project: defend every decision',6),I('j02','Agent project: defend every decision',8),I('j03','Voice project: defend every decision',10),I('j04','Full resume walk-through, aloud',14)])
+]}
+];
+var TABS=[['today','Today'],['dsa','DSA'],['system-design','System design'],['lld','LLD and machine coding'],['behavioural','Behavioural'],['applications','Applications'],['ai','AI rounds']];
+var STATUSES=['Applied','Recruiter call','Online test','Interviewing','Offer','Rejected','No reply'];
+var CLOSED={'Offer':1,'Rejected':1,'No reply':1};
+var APP_WEEKLY=5;
+var HOURS_DAY=6;
+var SPLIT=[['DSA, from the A2Z sheet','3 hours','dsa'],['System design or LLD, on alternate days','1 hour 15 minutes','system-design'],['AI rounds','1 hour','ai'],['Behavioural and applications','45 minutes','applications']];
+
+/* ---------- dates ---------- */
+function pad(n){return String(n).padStart(2,'0');}
+function dkey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+function dayIndex(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-START)/MS);}
+function fmt(d){return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});}
+function fmtShort(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function now(){return new Date();}
+function curIdx(){return Math.max(0,Math.min(DAYS-1,dayIndex(now())));}
+function curWeek(){return Math.floor(curIdx()/7)+1;}
+function weekStart(w){return addDays(START,(w-1)*7);}
+
+/* ---------- state ---------- */
+var LS='prep-tracker-v1';
+var state={checks:{done:{},revise:{},notes:{}},log:{days:{},total:474},apps:{list:[]},custom:{items:[]}};
+var DOCS=['checks','log','apps','custom'];
+function clone(x){return JSON.parse(JSON.stringify(x));}
+function norm(name,d){
+  d=d&&typeof d==='object'?d:{};
+  if(name==='checks')return {done:d.done||{},revise:d.revise||{},notes:d.notes||{}};
+  if(name==='log')return {days:d.days||{},total:Number(d.total)>0?Number(d.total):474};
+  if(name==='apps')return {list:Array.isArray(d.list)?d.list:[]};
+  return {items:Array.isArray(d.items)?d.items:[]};
+}
+function hasContent(name){
+  var s=state[name];
+  if(name==='checks')return Object.keys(s.done).length+Object.keys(s.revise).length+Object.keys(s.notes).length>0;
+  if(name==='log')return Object.keys(s.days).length>0||s.total!==474;
+  if(name==='apps')return s.list.length>0;
+  return s.items.length>0;
+}
+function loadLocal(){try{var r=localStorage.getItem(LS);if(r){var o=JSON.parse(r);DOCS.forEach(function(n){state[n]=norm(n,o[n]);});}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}}
+
+var store=null,loaded=false,touched={},dirty={},busy={},timers={},failed=false;
+var syncEl=document.getElementById('sync');
+function setSync(text,warn){syncEl.textContent=text;syncEl.className='sync'+(warn?' warn':'');}
+function refreshSync(){
+  if(!store)return;
+  if(failed)return setSync('Couldn’t save to your account. Changes are kept on this device.',true);
+  var pending=DOCS.some(function(n){return dirty[n]||busy[n];});
+  setSync(pending?'Saving':'Saved to your account');
+}
+function save(name){
+  saveLocal();
+  if(!loaded)touched[name]=true;
+  if(!store)return;
+  dirty[name]=true;refreshSync();
+  clearTimeout(timers[name]);
+  timers[name]=setTimeout(function(){flush(name,false);},700);
+}
+function flush(name,retried){
+  if(!store||busy[name]||!dirty[name])return;
+  busy[name]=true;dirty[name]=false;
+  store.doc(name).set(clone(state[name])).then(function(){
+    busy[name]=false;failed=false;
+    if(dirty[name])flush(name,false);else refreshSync();
+  },function(e){
+    busy[name]=false;
+    if(e&&e.code==='unavailable'&&!retried){dirty[name]=true;setTimeout(function(){flush(name,true);},800+Math.random()*1200);}
+    else{failed=true;refreshSync();}
+  });
+}
+function connect(){
+  if(!window.claude||typeof window.claude.use!=='function'){loaded=true;return setSync('Saved on this device only');}
+  var slow=setTimeout(function(){if(!loaded)setSync('Still connecting. Changes are kept on this device.',true);},10000);
+  Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){
+    var db=r[0],user=r[1];
+    if(!db||!user)throw 0;
+    return user.id().then(function(uid){
+      if(!uid)throw 0;
+      var col=db.collection('data/users/'+uid);
+      return Promise.all(DOCS.map(function(n){return col.doc(n).get();})).then(function(snaps){
+        store=col;
+        snaps.forEach(function(s,i){
+          var n=DOCS[i];
+          if(touched[n]){dirty[n]=true;}
+          else if(s.exists){state[n]=norm(n,clone(s.data()));}
+          else if(hasContent(n)){dirty[n]=true;}
+        });
+        loaded=true;clearTimeout(slow);saveLocal();render();
+        DOCS.forEach(function(n){if(dirty[n])flush(n,false);});
+        refreshSync();
+      });
+    });
+  }).catch(function(){loaded=true;clearTimeout(slow);if(!store)setSync('Saved on this device only');});
+}
+
+/* ---------- helpers ---------- */
+function h(tag,props){
+  var e=document.createElement(tag),k,v,i,c;
+  if(props)for(k in props){v=props[k];if(v==null||v===false)continue;
+    if(k==='class')e.className=v;
+    else if(k==='text')e.textContent=v;
+    else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);
+    else if(k==='checked'||k==='value'||k==='disabled'||k==='open'||k==='selected')e[k]=v;
+    else e.setAttribute(k,v===true?'':v);}
+  for(i=2;i<arguments.length;i++){c=arguments[i];if(Array.isArray(c)){c.forEach(function(x){app(e,x);});}else app(e,c);}
+  return e;
+}
+function app(e,c){if(c==null||c===false)return;e.appendChild(c.nodeType?c:document.createTextNode(String(c)));}
+function allItems(track){
+  var out=[];track.groups.forEach(function(g){g.items.forEach(function(it){out.push(it);});});
+  state.custom.items.forEach(function(it){if(it.track===track.id)out.push({id:it.id,t:it.title,w:0,custom:true});});
+  return out;
+}
+function counts(track){var a=allItems(track),d=0;a.forEach(function(it){if(state.checks.done[it.id])d++;});return {done:d,total:a.length};}
+function solved(){var s=0,k;for(k in state.log.days)s+=Number(state.log.days[k].dsa)||0;return s;}
+function activity(){
+  var m={},k,id;
+  for(k in state.log.days){m[k]=(Number(state.log.days[k].dsa)||0)+((Number(state.log.days[k].hours)||0)>0?1:0);}
+  for(id in state.checks.done){k=state.checks.done[id];m[k]=(m[k]||0)+1;}
+  return m;
+}
+function streak(act){
+  var d=now(),n=0;
+  if(!act[dkey(d)])d=addDays(d,-1);
+  while(act[dkey(d)]){n++;d=addDays(d,-1);}
+  return n;
+}
+function setDone(id,on){if(on)state.checks.done[id]=dkey(now());else delete state.checks.done[id];save('checks');render();}
+
+/* ---------- views ---------- */
+var view=document.getElementById('view'),tabsEl=document.getElementById('tabs');
+var ui={filter:{},open:{},selDay:null,showLate:false,noteOpen:{},confirm:null,appErr:''};
+function route(){var r=location.hash.replace('#','');return TABS.some(function(t){return t[0]===r;})?r:'today';}
+
+function renderTabs(r){
+  tabsEl.textContent='';
+  TABS.forEach(function(t){tabsEl.appendChild(h('a',{href:'#'+t[0],'aria-current':t[0]===r?'page':null,text:t[1]}));});
+}
+function render(){
+  var r=route(),y=window.scrollY,nodes;
+  renderTabs(r);
+  if(r==='today')nodes=viewToday();
+  else if(r==='applications')nodes=viewApps();
+  else nodes=viewTrack(TRACKS.filter(function(t){return t.id===r;})[0]);
+  view.textContent='';nodes.forEach(function(n){app(view,n);});
+  window.scrollTo(0,y);
+}
+
+function stepper(label,value,step,onChange){
+  function set(v){v=Math.max(0,Math.round(v/step)*step);onChange(v);}
+  return h('div',{class:'step'},
+    h('span',{class:'lab',text:label}),
+    h('button',{type:'button','aria-label':'Decrease '+label,onclick:function(){set(value-step);},text:'−'}),
+    h('input',{type:'number',min:'0',step:String(step),inputmode:'decimal','aria-label':label,value:String(value),onchange:function(e){set(Number(e.target.value)||0);}}),
+    h('button',{type:'button','aria-label':'Increase '+label,onclick:function(){set(value+step);},text:'+'}));
+}
+
+function itemRow(it,track,cw,showTrack){
+  var done=!!state.checks.done[it.id],rev=!!state.checks.revise[it.id],note=state.checks.notes[it.id]||'';
+  var cid='c_'+it.id;
+  var meta=h('div',{class:'meta'});
+  if(showTrack)app(meta,h('span',{text:track.name}));
+  if(it.w){
+    if(!done&&it.w<cw)app(meta,h('span',{class:'late',text:'Due week '+it.w}));
+    else app(meta,h('span',{text:'Week '+it.w+', from '+fmtShort(weekStart(it.w))}));
+  }
+  app(meta,h('button',{type:'button',class:'link','aria-pressed':rev?'true':'false',text:rev?'Marked to revise':'Mark to revise',onclick:function(){
+    if(rev)delete state.checks.revise[it.id];else state.checks.revise[it.id]=true;save('checks');render();}}));
+  app(meta,h('button',{type:'button',class:'link',text:note?'Edit note':'Add note',onclick:function(){ui.noteOpen[it.id]=!ui.noteOpen[it.id];render();}}));
+  if(it.custom)app(meta,h('button',{type:'button',class:'link danger',text:'Remove',onclick:function(){
+    state.custom.items=state.custom.items.filter(function(x){return x.id!==it.id;});
+    delete state.checks.done[it.id];delete state.checks.revise[it.id];delete state.checks.notes[it.id];
+    save('custom');save('checks');render();}}));
+  var row=h('div',{class:'item'+(done?' done':'')},
+    h('input',{type:'checkbox',id:cid,checked:done,onchange:function(e){setDone(it.id,e.target.checked);}}),
+    h('label',{for:cid,text:it.t}),meta);
+  if(ui.noteOpen[it.id]||note)app(row,h('input',{class:'note',type:'text','aria-label':'Note for '+it.t,placeholder:'What went wrong, or what to remember',value:note,onchange:function(e){
+    var v=e.target.value.trim();if(v)state.checks.notes[it.id]=v;else delete state.checks.notes[it.id];save('checks');}}));
+  return row;
+}
+
+function viewToday(){
+  var out=[],idx=dayIndex(now()),ci=curIdx(),cw=curWeek(),act=activity(),st=streak(act);
+  if(ui.selDay==null||ui.selDay>ci)ui.selDay=ci;
+  var left=DAYS-1-ci;
+  var headline=idx<0?'Starts '+fmtShort(START):idx>=DAYS?'Fourteen weeks done':'Week '+cw+' of '+WEEKS;
+  var sub=idx<0?'Your plan runs for 14 weeks, to 12 March.':idx>=DAYS?'The plan ended on 12 March. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go'+(st>1?', and a '+st+'-day streak.':'.');
+  var cal=h('div',{class:'cal',role:'group','aria-label':'Fourteen-week calendar, one square per day'});
+  for(var i=0;i<DAYS;i++){(function(i){
+    var d=addDays(START,i),k=dkey(d),a=act[k]||0,l=a===0?0:a<3?1:a<6?2:3;
+    cal.appendChild(h('button',{type:'button','data-l':String(l),class:(i===ci&&idx>=0&&idx<DAYS?'today ':'')+(i===ui.selDay?'sel':''),disabled:i>ci,'aria-label':fmt(d)+(a?', activity logged':', nothing logged'),title:fmt(d),onclick:function(){ui.selDay=i;render();}}));
+  })(i);}
+  out.push(h('section',{class:'hero'},
+    h('h1',null,headline,h('small',{text:sub})),
+    h('div',null,cal,h('div',{class:'calnote'},h('span',{text:'5 Dec'}),h('span',{text:'Tap a day to edit its log'}),h('span',{text:'12 Mar'})))));
+
+  var sd=addDays(START,ui.selDay),sk=dkey(sd),day=state.log.days[sk]||{};
+  function setDay(field,v){var o=state.log.days[sk]||{};o[field]=v;if(!(Number(o.dsa)>0)&&!(Number(o.hours)>0))delete state.log.days[sk];else state.log.days[sk]=o;save('log');render();}
+  out.push(h('h2',{text:'Log for '+fmt(sd)}));
+  out.push(h('div',{class:'panel logrow'},
+    stepper('DSA problems solved',Number(day.dsa)||0,1,function(v){setDay('dsa',v);}),
+    stepper('Hours studied, aiming for '+HOURS_DAY,Number(day.hours)||0,0.5,function(v){setDay('hours',v);})));
+  out.push(h('h2',{text:'A '+HOURS_DAY+'-hour day'}));
+  var sp=h('div',{class:'panel prog'});
+  SPLIT.forEach(function(s){sp.appendChild(h('a',{href:'#'+s[2]},h('span',{class:'nm',text:s[0]}),h('span',{class:'ct',text:s[1]})));});
+  out.push(sp);
+
+  out.push(h('h2',{text:'Progress'}));
+  var prog=h('div',{class:'prog'});
+  var total=state.log.total,sv=solved(),exp=Math.round(total*Math.min(1,(ci+1)/DSA_DAYS));
+  prog.appendChild(h('a',{href:'#dsa'},h('span',{class:'nm',text:'DSA problems'}),h('span',{class:'ct',text:sv+' of '+total+' solved, on pace is '+exp}),
+    h('div',{class:'bar'},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}),h('b',{style:'left:'+Math.min(100,exp/total*100)+'%'}))));
+  TRACKS.forEach(function(t){
+    var c=counts(t);
+    prog.appendChild(h('a',{href:'#'+t.id},h('span',{class:'nm',text:t.id==='dsa'?'DSA sections':t.name}),h('span',{class:'ct',text:c.done+' of '+c.total}),
+      h('div',{class:'bar'},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));
+  });
+  var hw=0;for(var j=(cw-1)*7;j<cw*7;j++){var dd=state.log.days[dkey(addDays(START,j))];if(dd)hw+=Number(dd.hours)||0;}
+  prog.appendChild(h('a',{href:'#today'},h('span',{class:'nm',text:'Hours this week'}),h('span',{class:'ct',text:hw+' of '+HOURS_DAY*7}),
+    h('div',{class:'bar'},h('i',{style:'width:'+Math.min(100,hw/(HOURS_DAY*7)*100)+'%'}))));
+  var ws=weekStart(cw),wk=state.apps.list.filter(function(a){var n=dayIndex(new Date(a.date+'T00:00:00'));return n>=(cw-1)*7&&n<cw*7;}).length;
+  prog.appendChild(h('a',{href:'#applications'},h('span',{class:'nm',text:'Applications'}),h('span',{class:'ct',text:state.apps.list.length+' sent, '+wk+' of '+APP_WEEKLY+' this week'}),
+    h('div',{class:'bar'},h('i',{style:'width:'+Math.min(100,wk/APP_WEEKLY*100)+'%'}))));
+  out.push(h('div',{class:'panel'},prog));
+
+  out.push(h('h2',{text:'This week, from '+fmtShort(ws)}));
+  var any=false,late=0;
+  TRACKS.forEach(function(t){
+    var list=allItems(t).filter(function(it){
+      if(state.checks.done[it.id]||!it.w)return false;
+      if(it.w<cw){late++;return ui.showLate;}
+      return it.w===cw;});
+    if(!list.length)return;any=true;
+    out.push(h('div',{class:'grpname',text:t.name}));
+    list.forEach(function(it){out.push(itemRow(it,t,cw,false));});
+  });
+  if(!any)out.push(h('p',{class:'empty',text:late?'This week’s items are all ticked. Earlier weeks still have open items.':'Everything planned up to this week is ticked.'}));
+  if(late)out.push(h('p',null,h('button',{type:'button',class:'link',text:ui.showLate?'Hide items from earlier weeks':'Show '+late+' open '+(late===1?'item':'items')+' from earlier weeks',onclick:function(){ui.showLate=!ui.showLate;render();}})));
+
+  out.push(h('footer',null,
+    h('p',{text:'Progress is saved to your account when the page can reach it, and always on this device.'}),
+    h('button',{type:'button',class:'link danger',text:ui.confirm==='reset'?'Tap again to clear everything':'Clear all progress',onclick:function(){
+      if(ui.confirm!=='reset'){ui.confirm='reset';render();setTimeout(function(){if(ui.confirm==='reset'){ui.confirm=null;render();}},4000);return;}
+      ui.confirm=null;DOCS.forEach(function(n){state[n]=norm(n,null);save(n);});render();}})));
+  return out;
+}
+
+function viewTrack(t){
+  var out=[],cw=curWeek(),c=counts(t),f=ui.filter[t.id]||'all';
+  out.push(h('h2',{style:'margin-top:.25rem',text:t.name}));
+  out.push(h('p',{class:'sub',text:t.intro}));
+  var prog=h('div',{class:'prog',style:'margin-top:1rem'},h('a',{href:'#'+t.id},h('span',{class:'nm',text:t.id==='dsa'?'Sections done':'Done'}),h('span',{class:'ct',text:c.done+' of '+c.total}),h('div',{class:'bar'},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));
+  if(t.id==='dsa'){
+    var sv=solved(),total=state.log.total;
+    prog.appendChild(h('a',{href:'#today'},h('span',{class:'nm',text:'Problems solved'}),h('span',{class:'ct',text:sv+' of '+total}),h('div',{class:'bar'},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}))));
+  }
+  out.push(prog);
+  if(t.id==='dsa')out.push(h('div',{class:'addrow'},h('label',{class:'field',style:'flex:0 1 16rem'},'Problems in the sheet, as TUF+ shows it',
+    h('input',{type:'number',min:'1',inputmode:'numeric',value:String(state.log.total),onchange:function(e){var v=Math.round(Number(e.target.value));if(v>0){state.log.total=v;save('log');}render();}}))));
+
+  var chips=h('div',{class:'chips',role:'group','aria-label':'Filter items'});
+  [['all','All'],['week','This week'],['todo','Not done'],['revise','To revise']].forEach(function(x){
+    chips.appendChild(h('button',{type:'button','aria-pressed':f===x[0]?'true':'false',text:x[1],onclick:function(){ui.filter[t.id]=x[0];render();}}));});
+  out.push(chips);
+
+  function keep(it){
+    if(f==='week')return it.w===cw;
+    if(f==='todo')return !state.checks.done[it.id];
+    if(f==='revise')return !!state.checks.revise[it.id];
+    return true;}
+  var groups=t.groups.slice(),mine=state.custom.items.filter(function(x){return x.track===t.id;}).map(function(x){return {id:x.id,t:x.title,w:0,custom:true};});
+  if(mine.length)groups.push({name:'Your additions',items:mine});
+  var shown=0;
+  groups.forEach(function(g){
+    var list=g.items.filter(keep);if(!list.length)return;shown++;
+    var d=0;g.items.forEach(function(it){if(state.checks.done[it.id])d++;});
+    var gk=t.id+'|'+g.name,open=gk in ui.open?ui.open[gk]:(f!=='all'||g.items.some(function(it){return it.w===cw;})||g.name==='Your additions');
+    var det=h('details',{class:'grp',open:open},h('summary',null,h('span',{text:g.name}),h('span',{text:d+' of '+g.items.length})));
+    det.addEventListener('toggle',function(){ui.open[gk]=det.open;});
+    list.forEach(function(it){det.appendChild(itemRow(it,t,cw,false));});
+    out.push(det);
+  });
+  if(!shown)out.push(h('p',{class:'empty',text:f==='revise'?'Nothing is marked to revise. Use “Mark to revise” on any item you want to come back to.':f==='week'?'Nothing in this track is planned for this week.':f==='todo'?'Every item in this track is ticked.':'No items yet.'}));
+
+  var inp=h('input',{type:'text',placeholder:'Add your own item to '+t.name,'aria-label':'New item for '+t.name,maxlength:'140'});
+  function add(){var v=inp.value.trim();if(!v)return inp.focus();state.custom.items.push({id:'x'+Date.now().toString(36),track:t.id,title:v});save('custom');render();}
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')add();});
+  out.push(h('div',{class:'addrow'},inp,h('button',{type:'button',class:'btn',text:'Add item',onclick:add})));
+  return out;
+}
+
+function viewApps(){
+  var out=[],cw=curWeek(),list=state.apps.list;
+  out.push(h('h2',{style:'margin-top:.25rem',text:'Applications'}));
+  out.push(h('p',{class:'sub',text:'Aim for '+APP_WEEKLY+' targeted applications a week, referrals first. Update the status as each one moves.'}));
+  var wk=list.filter(function(a){var n=dayIndex(new Date(a.date+'T00:00:00'));return n>=(cw-1)*7&&n<cw*7;}).length;
+  function cnt(fn){return list.filter(fn).length;}
+  out.push(h('div',{class:'stats'},
+    h('div',null,h('strong',{text:String(list.length)}),h('span',{text:'Sent in total'})),
+    h('div',null,h('strong',{text:wk+' of '+APP_WEEKLY}),h('span',{text:'Sent this week'})),
+    h('div',null,h('strong',{text:String(cnt(function(a){return !CLOSED[a.status];}))}),h('span',{text:'Still open'})),
+    h('div',null,h('strong',{text:String(cnt(function(a){return a.status==='Interviewing';}))}),h('span',{text:'Interviewing'})),
+    h('div',null,h('strong',{text:String(cnt(function(a){return a.status==='Offer';}))}),h('span',{text:'Offers'}))));
+
+  function sel(opts,val){var s=h('select');opts.forEach(function(o){s.appendChild(h('option',{value:o,text:o,selected:o===val}));});return s;}
+  var fc=h('input',{type:'text',maxlength:'80',autocomplete:'organization'}),fr=h('input',{type:'text',maxlength:'80',placeholder:'AI engineer'}),
+      fk=sel(['AI engineer','SDE','Backend','Other'],'AI engineer'),fs=sel(['Referral','Recruiter','Direct','Other'],'Referral'),
+      fd=h('input',{type:'date',value:dkey(now())});
+  function addApp(){
+    var company=fc.value.trim();
+    if(!company){ui.appErr='Add a company name to save this application.';render();return;}
+    ui.appErr='';
+    state.apps.list.push({id:'a'+Date.now().toString(36),company:company,role:fr.value.trim(),kind:fk.value,source:fs.value,date:fd.value||dkey(now()),status:'Applied',note:''});
+    save('apps');render();
+  }
+  out.push(h('h2',{text:'Add an application'}));
+  out.push(h('div',{class:'panel'},h('div',{class:'addrow',style:'margin-top:0'},
+    h('label',{class:'field'},'Company',fc),h('label',{class:'field'},'Role',fr),h('label',{class:'field'},'Type',fk),
+    h('label',{class:'field'},'Source',fs),h('label',{class:'field'},'Date sent',fd),
+    h('button',{type:'button',class:'btn',text:'Add application',onclick:addApp})),
+    ui.appErr?h('p',{class:'err',role:'alert',text:ui.appErr}):null));
+
+  out.push(h('h2',{text:'Pipeline'}));
+  if(!list.length){out.push(h('p',{class:'empty',text:'No applications yet. Add the first one above, and start with people who can refer you.'}));return out;}
+  list.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;}).forEach(function(a){
+    var st=sel(STATUSES,a.status);st.setAttribute('aria-label','Status for '+a.company);
+    st.addEventListener('change',function(){a.status=st.value;save('apps');render();});
+    var d=new Date(a.date+'T00:00:00');
+    out.push(h('div',{class:'appcard'},
+      h('div',{class:'who'},h('strong',{text:a.company}),h('div',{text:[a.role||a.kind,a.source,isNaN(d)?'':'sent '+fmtShort(d)].filter(Boolean).join(', ')})),
+      st,
+      h('input',{class:'note',type:'text','aria-label':'Next step for '+a.company,placeholder:'Next step, contact or interview date',value:a.note||'',onchange:function(e){a.note=e.target.value.trim();save('apps');}}),
+      h('div',{class:'acts'},h('button',{type:'button',class:'link danger',text:ui.confirm===a.id?'Tap again to remove':'Remove',onclick:function(){
+        if(ui.confirm!==a.id){ui.confirm=a.id;render();setTimeout(function(){if(ui.confirm===a.id){ui.confirm=null;render();}},4000);return;}
+        ui.confirm=null;state.apps.list=state.apps.list.filter(function(x){return x.id!==a.id;});save('apps');render();}}))));
+  });
+  return out;
+}
+
+/* ---------- start ---------- */
+loadLocal();
+render();
+window.addEventListener('hashchange',function(){render();window.scrollTo(0,0);});
+connect();
+})();
+</script>
+</body>
+</html>
