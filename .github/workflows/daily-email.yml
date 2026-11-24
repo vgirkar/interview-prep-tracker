@@ -1,0 +1,37 @@
+name: Daily prep email
+
+on:
+  schedule:
+    - cron: '30 1 * * *'   # 07:00 India time: today's plan
+    - cron: '30 15 * * *'  # 21:00 India time: reminder to log progress
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'morning (plan) or evening (reminder)'
+        default: 'morning'
+      date:
+        description: 'Preview a date as YYYY-MM-DD, or leave empty for today'
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the email
+        id: build
+        env:
+          MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 15 * * *' && 'evening' || 'morning') || inputs.mode }}
+          FORCE_DATE: ${{ inputs.date }}
+          PREVIEW: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+        run: node scripts/daily-email.mjs
+      - name: Send the email
+        if: steps.build.outputs.send == 'true'
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python3 scripts/send_mail.py
