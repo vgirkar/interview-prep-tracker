@@ -166,6 +166,16 @@ button{transition:transform .12s ease,background-color .15s ease,color .15s ease
 .confetti{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:30}
 .bar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.trend{display:flex;align-items:flex-end;gap:4px;height:4.5rem;margin-top:1rem}
+.trend div{flex:1;height:100%;position:relative;background:var(--heat0);border-radius:3px}
+.trend div i{position:absolute;inset:auto 0 0 0;background:var(--primary);border-radius:3px}
+.part{padding:1rem 0;border-top:1px dashed var(--line)}
+.part h3{margin:0;font-size:1rem}
+.part p{margin:.25rem 0}
+.part ol{margin:.5rem 0;padding-left:1.5rem;font-size:.9375rem}
+.part li{margin:.3rem 0}
+.part .chips{margin:.5rem 0}
+.clock{font-family:var(--display);font-weight:700;margin-right:.75rem}
 footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.8125rem;color:var(--muted)}
 </style>
 </head>
@@ -230,11 +240,12 @@ var TRACKS=[
  G('Theory',[I('a01','Transformers and attention',1),I('a02','Tokenisation and context windows',1),I('a03','Sampling: temperature, top-p, top-k',2),I('a04','Embeddings and similarity',2),I('a05','Prompting: few-shot, chain of thought, structured outputs',3),I('a06','RAG pipeline, end to end',3),I('a07','Chunking strategies',4),I('a08','Vector databases and ANN indexes (HNSW, IVF)',4),I('a09','Hybrid search and reranking',5),I('a10','RAG evaluation: faithfulness, relevance, recall',5),I('a11','LLM evals and LLM-as-judge',6),I('a12','Function calling and tool use',6),I('a13','Agents: ReAct, planning, memory',7),I('a14','Multi-agent orchestration and state',7),I('a15','Model Context Protocol',8),I('a16','Fine-tuning versus RAG, LoRA and PEFT',8),I('a17','Quantisation and model serving',9),I('a18','Cost and latency levers: caching, routing, streaming',9),I('a19','Guardrails and prompt injection',10),I('a20','Hallucination: causes and controls',10),I('a21','Observability and tracing for LLM apps',11),I('a22','ML basics: bias and variance, overfitting, precision and recall',11),I('a23','Voice pipelines: speech-to-text, text-to-speech, turn-taking',12)]),
  G('AI coding round',[I('c01','Cosine similarity and top-k retrieval from scratch',2),I('c02','Text chunker with overlap',3),I('c03','BM25 from scratch',4),I('c04','Mini RAG pipeline, end to end',5),I('c05','Tool-calling agent loop without a framework',6),I('c06','Streaming chat endpoint in FastAPI',7),I('c07','Async batch LLM caller with retries and backoff',8),I('c08','Structured output parser with validation and retry',9),I('c09','Cache for LLM calls, exact and semantic',10),I('c10','Token-budgeted conversation memory',11),I('c11','Eval harness for a RAG system',12),I('c12','Self-attention in NumPy',13)]),
  G('GenAI system design',[I('g01','RAG system at scale',5),I('g02','Agent workflow platform',7),I('g03','LLM evals and monitoring',9),I('g04','Voice agent pipeline',10),I('g05','Customer support bot with guardrails',11),I('g06','Multi-tenant document Q&A',12),I('g07','LLM gateway: routing, caching, rate limits',13),I('g08','Semantic search over a large catalogue',14)]),
+ G('Company question bank',[I('q01','Question bank: LLM internals and architecture',2),I('q02','Question bank: RAG and retrieval',4),I('q03','Question bank: agents and tool use',6),I('q04','Question bank: evaluation and observability',7),I('q05','Question bank: fine-tuning, post-training and alignment',9),I('q06','Question bank: inference, serving and GPU performance',10),I('q07','Question bank: safety, security and responsible AI',11),I('q08','Question bank: AI system design',12),I('q09','Question bank: coding and data structures',13),I('q10','Question bank: multimodal, speech and voice AI',14)]),
  G('Python and backend',[I('p01','GIL, threads and multiprocessing',1),I('p02','asyncio and the event loop',2),I('p03','Generators, iterators and decorators',3),I('p04','Context managers and memory management',4),I('p05','FastAPI: dependency injection, async, Pydantic',5),I('p06','Auth: JWT and OAuth',6),I('p07','SQL: joins and window functions',7),I('p08','SQL: indexing, transactions, isolation',8),I('p09','Caching and idempotency',9),I('p10','Docker and CI/CD',10),I('p11','The AWS services you’ve used',11)]),
  G('Project deep-dives',[I('j01','RAG project: defend every decision',6),I('j02','Agent project: defend every decision',8),I('j03','Voice project: defend every decision',10),I('j04','Full resume walk-through, aloud',14)])
 ]}
 ];
-var TABS=[['today','Today'],['dsa','DSA'],['system-design','System design'],['lld','LLD and machine coding'],['behavioural','Behavioural'],['applications','Applications'],['ai','AI rounds']];
+var TABS=[['today','Today'],['dsa','DSA'],['system-design','System design'],['lld','LLD and machine coding'],['behavioural','Behavioural'],['applications','Applications'],['ai','AI rounds'],['weekly-test','Weekly tests']];
 var STATUSES=['Applied','Recruiter call','Online test','Interviewing','Offer','Rejected','No reply'];
 var CLOSED={'Offer':1,'Rejected':1,'No reply':1};
 var APP_WEEKLY=5;
@@ -243,12 +254,14 @@ var TRACK_LINKS={
  'dsa':[['The A2Z sheet on takeUforward','https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/']],
  'system-design':[['System Design in a Hurry, by Hello Interview','https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'],['The System Design Primer','https://github.com/donnemartin/system-design-primer']],
  'lld':[['Design patterns in Python, by Refactoring.Guru','https://refactoring.guru/design-patterns/python'],['Pattern code examples in Python','https://github.com/refactoringguru/design-patterns-python']],
- 'ai':[['The Illustrated Transformer','https://jalammar.github.io/illustrated-transformer/'],['Building effective agents, by Anthropic','https://www.anthropic.com/engineering/building-effective-agents']]
+ 'ai':[['The Illustrated Transformer','https://jalammar.github.io/illustrated-transformer/'],['Building effective agents, by Anthropic','https://www.anthropic.com/engineering/building-effective-agents'],['AI engineering interview questions, company by company','https://github.com/pallavi-shekhar/ai-engineering-interview-questions-company-wise#common-questions-asked-across-companies']]
 };
 var RG=['Refactoring.Guru guide','https://refactoring.guru/design-patterns/python'],SDP=['System Design Primer','https://github.com/donnemartin/system-design-primer'],BEA=['Building effective agents','https://www.anthropic.com/engineering/building-effective-agents'];
 var LINKS={l01:['SOLID in Python, on Real Python','https://realpython.com/solid-principles-python/'],l04:RG,l05:RG,l06:RG,l07:RG,l08:RG,l09:RG,l10:RG,s01:SDP,s02:SDP,s03:SDP,s04:SDP,s07:SDP,s08:SDP,a01:['The Illustrated Transformer','https://jalammar.github.io/illustrated-transformer/'],a13:BEA,a14:BEA};
+var QB='https://github.com/pallavi-shekhar/ai-engineering-interview-questions-company-wise';
+[['q01','llm-internals-and-architecture'],['q02','rag-and-retrieval'],['q03','agents-and-tool-use'],['q04','evaluation-and-observability'],['q05','fine-tuning-post-training-and-alignment'],['q06','inference-serving-and-gpu-performance'],['q07','safety-security-and-responsible-ai'],['q08','ai-system-design'],['q09','coding-and-data-structures'],['q10','multimodal-speech-and-voice-ai']].forEach(function(x){LINKS[x[0]]=['Questions and answers on GitHub',QB+'#'+x[1]];});
 var QTRACK={'dsa':['Striver A2Z ',''],'system-design':['',' system design interview'],'lld':['',' low level design'],'behavioural':['',' interview answer'],'ai':['',' explained']};
-var QGROUP={'Revision':null,'Mock interviews':null,'Practice':null,'Project deep-dives':null,'Foundations':['',' Python'],'Design patterns':['',' design pattern Python'],'Machine coding, timed 90 minutes':['',' machine coding round'],'AI coding round':['',' Python implementation'],'GenAI system design':['',' GenAI system design interview'],'Python and backend':['',' interview questions']};
+var QGROUP={'Company question bank':null,'Revision':null,'Mock interviews':null,'Practice':null,'Project deep-dives':null,'Foundations':['',' Python'],'Design patterns':['',' design pattern Python'],'Machine coding, timed 90 minutes':['',' machine coding round'],'AI coding round':['',' Python implementation'],'GenAI system design':['',' GenAI system design interview'],'Python and backend':['',' interview questions']};
 var NOQ={m12:1,m13:1,m14:1};
 TRACKS.forEach(function(t){t.groups.forEach(function(g){
   var q=g.name in QGROUP?QGROUP[g.name]:QTRACK[t.id],topic=g.name.indexOf('Step ')===0?g.name.split(': ').slice(1).join(': ')+' ':'';
@@ -287,14 +300,15 @@ function weekStart(w){return addDays(START,(w-1)*7);}
 
 /* ---------- state ---------- */
 var LS='prep-tracker-v1';
-var state={checks:{done:{},revise:{},notes:{},links:{}},log:{days:{},total:474,badges:{}},apps:{list:[]},custom:{items:[]}};
-var DOCS=['checks','log','apps','custom'];
+var state={checks:{done:{},revise:{},notes:{},links:{}},log:{days:{},total:474,badges:{}},apps:{list:[]},custom:{items:[]},tests:{weeks:{}}};
+var DOCS=['checks','log','apps','custom','tests'];
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function norm(name,d){
   d=d&&typeof d==='object'?d:{};
   if(name==='checks')return {done:d.done||{},revise:d.revise||{},notes:d.notes||{},links:d.links||{}};
   if(name==='log')return {days:d.days||{},total:Number(d.total)>0?Number(d.total):474,badges:d.badges||{}};
   if(name==='apps')return {list:Array.isArray(d.list)?d.list:[]};
+  if(name==='tests')return {weeks:d.weeks||{}};
   return {items:Array.isArray(d.items)?d.items:[]};
 }
 function hasContent(name){
@@ -302,6 +316,7 @@ function hasContent(name){
   if(name==='checks')return Object.keys(s.done).length+Object.keys(s.revise).length+Object.keys(s.notes).length+Object.keys(s.links).length>0;
   if(name==='log')return Object.keys(s.days).length>0||s.total!==474;
   if(name==='apps')return s.list.length>0;
+  if(name==='tests')return Object.keys(s.weeks).length>0;
   return s.items.length>0;
 }
 function loadLocal(){try{var r=localStorage.getItem(LS);if(r){var o=JSON.parse(r);DOCS.forEach(function(n){state[n]=norm(n,o[n]);});}}catch(e){}}
@@ -425,7 +440,7 @@ function confetti(x,y,n){
     an.onfinish=function(){if(p.parentNode)p.parentNode.removeChild(p);};
   })(i);}
 }
-function xp(){var x=solved()*5+Object.keys(state.checks.done).length*10+state.apps.list.length*8,k;for(k in state.log.days)x+=Math.round((Number(state.log.days[k].hours)||0)*2);return x;}
+function xp(){var x=solved()*5+Object.keys(state.checks.done).length*10+state.apps.list.length*8+testsDone()*40,k;for(k in state.log.days)x+=Math.round((Number(state.log.days[k].hours)||0)*2);return x;}
 function level(){var x=xp(),n=Math.floor(x/XP_PER);return {n:n+1,name:LEVELS[Math.min(n,LEVELS.length-1)],into:x%XP_PER,xp:x};}
 function badges(){
   var act=activity(),st=streak(act),sv=solved(),dn=Object.keys(state.checks.done),apps=state.apps.list,k,six=false;
@@ -444,6 +459,7 @@ function badges(){
     ['pall','🏆','Sheet complete','Solve every problem in the sheet',sv>=state.log.total],
     ['round','⌨️','First timed round','Finish a machine coding round',has(ROUNDS)],
     ['mock','🎤','First mock','Finish any mock interview',has(MOCKS)],
+    ['test1','📝','First weekly test','Score every part of a weekly test',testsDone()>=1],
     ['app1','📨','First application','Add an application',apps.length>=1],
     ['app10','📬','10 applications','Add ten applications',apps.length>=10],
     ['intv','🤝','Interview stage','Move an application to Interviewing',apps.some(function(a){return a.status==='Interviewing'||a.status==='Offer';})],
@@ -486,6 +502,7 @@ function render(){
   renderTabs(r);
   if(r==='today')nodes=viewToday();
   else if(r==='applications')nodes=viewApps();
+  else if(r==='weekly-test')nodes=viewTests();
   else nodes=viewTrack(TRACKS.filter(function(t){return t.id===r;})[0]);
   view.textContent='';nodes.forEach(function(n){app(view,n);});
   Array.prototype.forEach.call(view.querySelectorAll('.bar i'),function(el,i){
@@ -566,7 +583,7 @@ function viewToday(){
   out.push(h('div',{class:'panel level'},
     h('div',{class:'row'},h('strong',{text:'Level '+lv.n+', '+lv.name}),h('span',{class:'ct',text:lv.into+' of '+XP_PER+' XP to level '+(lv.n+1)})),
     h('div',{class:'bar'},h('i',{style:'width:'+(lv.into/XP_PER*100)+'%'})),
-    h('div',{class:'hint',text:'Earn 10 XP for each item, 5 for each DSA problem, 8 for each application and 2 for each hour logged.'})));
+    h('div',{class:'hint',text:'Earn 10 XP for each item, 5 for each DSA problem, 8 for each application, 2 for each hour logged and 40 for each weekly test.'})));
 
   var sd=addDays(START,ui.selDay),sk=dkey(sd),day=state.log.days[sk]||{};
   function setDay(field,v){
@@ -604,6 +621,7 @@ function viewToday(){
   out.push(h('div',{class:'panel'},prog));
 
   out.push(h('h2',{text:'Plan for '+fmt(sd)}));
+  if(ui.selDay>=8&&(ui.selDay-1)%7===0){var tw=(ui.selDay-1)/7;out.push(h('p',{class:'panel',style:'margin:0 0 .75rem'},'Weekly test day: test yourself on everything from week '+tw+'. ',h('a',{class:'link',style:'font-size:inherit',href:'#weekly-test',text:'Open the week '+tw+' test'})));}
   if(ui.selDay!==ci)out.push(h('p',{style:'margin:0'},h('button',{type:'button',class:'link',text:idx<0?'Back to the first day':'Back to today',onclick:function(){ui.selDay=ci;render();}})));
   var any=false,late=0;
   TRACKS.forEach(function(t){
@@ -647,7 +665,7 @@ function viewTrack(t){
   out.push(h('p',{class:'sub',text:t.intro}));
   if(TRACK_LINKS[t.id]){
     var sh=h('p',{class:'sub'},'Start here: ');
-    TRACK_LINKS[t.id].forEach(function(l,i){if(i)app(sh,' and ');app(sh,h('a',{class:'link',style:'font-size:inherit',href:l[1],target:'_blank',rel:'noopener noreferrer',text:l[0]}));});
+    TRACK_LINKS[t.id].forEach(function(l,i){if(i)app(sh,i===TRACK_LINKS[t.id].length-1?' and ':', ');app(sh,h('a',{class:'link',style:'font-size:inherit',href:l[1],target:'_blank',rel:'noopener noreferrer',text:l[0]}));});
     app(sh,'.');out.push(sh);
   }
   var prog=h('div',{class:'prog',style:'margin-top:1rem'},h('a',{href:'#'+t.id},h('span',{class:'nm',text:t.id==='dsa'?'Sections done':'Done'}),h('span',{class:'ct',text:c.done+' of '+c.total}),h('div',{class:'bar'},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));
@@ -737,6 +755,120 @@ function viewApps(){
         if(ui.confirm!==a.id){ui.confirm=a.id;render();setTimeout(function(){if(ui.confirm===a.id){ui.confirm=null;render();}},4000);return;}
         ui.confirm=null;state.apps.list=state.apps.list.filter(function(x){return x.id!==a.id;});save('apps');render();}}))));
   });
+  return out;
+}
+
+/* ---------- weekly tests ---------- */
+var QS={
+d1_1:['Reverse a string without a built-in reverse','FizzBuzz with clean input handling'],d1_2:['Print a diamond pattern for n rows','Print the first n rows of Pascal’s triangle'],d1_3:['Group anagrams','Top k frequent elements'],d1_4:['Count primes below n with a sieve','GCD of two numbers, then LCM of an array'],d1_5:['Check a palindrome recursively','Nth Fibonacci number with memoisation'],d1_6:['First unique character in a string','Longest consecutive sequence'],
+d2_1:['Implement insertion sort','Sort colours (Dutch national flag)'],d2_2:['Implement merge sort','Kth largest element with quickselect'],
+d3_1:['Move zeroes','Best time to buy and sell stock'],d3_2:['Product of array except self','Subarray sum equals k'],d3_3:['Merge intervals','Reverse pairs'],
+d4_1:['Search in a rotated sorted array','First and last position of an element in a sorted array'],d4_2:['Koko eating bananas','Split array largest sum'],d4_3:['Search a 2D matrix II','Find a peak element II'],
+d6_1:['Reverse a linked list','Middle of the linked list'],d6_2:['Design browser history','Flatten a multilevel doubly linked list'],d6_3:['Remove the nth node from the end','Add two numbers'],d6_4:['LRU cache','Remove duplicates from a sorted doubly linked list'],d6_5:['Reverse nodes in k-group','Copy list with random pointer'],
+d9_1:['Implement a queue using stacks','Min stack'],d9_2:['Evaluate reverse Polish notation','Basic calculator II'],d9_3:['Daily temperatures','Largest rectangle in a histogram'],d9_4:['Sliding window maximum','LFU cache'],
+d10_1:['Longest substring without repeating characters','Fruit into baskets'],d10_2:['Minimum window substring','Subarrays with k different integers'],
+d13_1:['Binary tree level order traversal','Iterative inorder traversal'],d13_2:['Diameter of a binary tree','Lowest common ancestor of a binary tree'],d13_3:['Binary tree maximum path sum','Serialize and deserialize a binary tree'],
+d14_1:['Validate a binary search tree','Insert into a binary search tree'],d14_2:['Kth smallest element in a BST','Recover a binary search tree'],
+d11_1:['Implement a min-heap with push and pop','Kth largest element in an array'],d11_2:['Task scheduler','K closest points to origin'],d11_3:['Find the median from a data stream','Merge k sorted lists'],
+d15_1:['Number of provinces','Clone graph'],d15_2:['Rotting oranges','Number of islands'],d15_3:['Course schedule II','Alien dictionary'],d15_4:['Network delay time','Cheapest flights within k stops'],d15_5:['Min cost to connect all points','Accounts merge'],d15_6:['Critical connections in a network','Count strongly connected components'],
+d7_1:['Pow(x, n)','Generate parentheses'],d7_2:['Subsets II','Combination sum'],d7_3:['N-Queens','Word search'],
+d5_1:['Valid anagram','Longest common prefix'],d5_2:['Longest palindromic substring','String to integer (atoi)'],
+d16_1:['Climbing stairs','Min cost climbing stairs'],d16_2:['House robber II','Decode ways'],d16_3:['Unique paths II','Minimum path sum'],d16_4:['Partition equal subset sum','Coin change'],d16_5:['Longest common subsequence','Edit distance'],d16_6:['Best time to buy and sell stock with cooldown','Best time to buy and sell stock III'],d16_7:['Longest increasing subsequence','Russian doll envelopes'],d16_8:['Burst balloons','Palindrome partitioning II'],d16_9:['Maximal square','Count square submatrices with all ones'],
+d12_1:['Assign cookies','Lemonade change'],d12_2:['Jump game II','Non-overlapping intervals'],
+d8_1:['Number of 1 bits','Power of two'],d8_2:['Single number II','Generate all subsets using bitmasks'],d8_3:['Prime factorisation of n','Count primes in a range with a segmented sieve'],
+d17_1:['Implement a trie with insert, search and startsWith'],d17_2:['Word search II','Maximum XOR of two numbers in an array'],d18_1:['Shortest palindrome, using KMP','Repeated string match, using Rabin–Karp'],
+s01:['How would you scale a read-heavy service from one server to a million users? Where do the load balancer, cache and CDN each go?'],s02:['When would you pick a relational database over NoSQL? How does an index speed up a query, and what does it cost?'],s03:['Explain leader and follower replication and replication lag. How would you choose a shard key for a users table?'],s04:['State the CAP theorem with a real example. What is the difference between strong and eventual consistency?'],s05:['When would you put a queue between two services? Explain at-least-once delivery and how consumers stay idempotent.'],s06:['Design the API for a payments endpoint: versioning, pagination, idempotency keys and error format.'],s07:['How does consistent hashing work, and what problem do virtual nodes solve?'],s08:['Estimate the storage and requests per second for a service with 100 million daily users posting twice a day.'],
+s10:['Design a URL shortener handling 100 million new links a month. Cover ID generation, storage, caching and redirects.'],s11:['Design a distributed rate limiter for an API gateway. Compare token bucket and sliding window.'],s12:['Design a news feed for 50 million users. Compare fan-out on write with fan-out on read.'],s13:['Design one-to-one and group chat with delivery and read receipts.'],s14:['Design a notification system for push, SMS and email, with retries and user preferences.'],s15:['Design a payments system that never double-charges. Cover idempotency, the ledger and reconciliation.'],s16:['Design search autocomplete that returns suggestions in under 100 milliseconds.'],s17:['Design a web crawler for a billion pages. Cover politeness, deduplication and the URL frontier.'],s18:['Design a video streaming service: upload, transcoding, storage and adaptive playback.'],s19:['Design a ride-hailing service: driver location updates, matching and trip state.'],s20:['Design a file storage and sync service with chunking, deduplication and conflict handling.'],s21:['Design a ticket booking system that never sells the same seat twice.'],s22:['Design a distributed cache: eviction, replication and avoiding a thundering herd.'],s23:['Design a distributed job scheduler with retries, and say what guarantee you can give about running a job once.'],s24:['Design a metrics and monitoring system ingesting a million data points a second.'],
+l01:['Explain each SOLID principle with a one-line Python example, and name one you have seen broken.'],l02:['When would you use an abstract base class over duck typing? What do dataclasses and enums give you?'],l03:['Draw the class diagram for a library system and talk through each relationship aloud.'],l04:['Implement a payment processor that swaps between card, UPI and wallet using the strategy pattern.'],l05:['Implement a factory that creates email, SMS and push senders. When is a factory overkill?'],l06:['Implement a stock-price ticker that notifies subscribers of changes, using the observer pattern.'],l07:['Model an order moving through placed, paid, shipped and delivered using the state pattern.'],l08:['Write a Python decorator that retries a function with backoff, then explain the decorator pattern in OOP terms.'],l09:['Build a query builder for SQL SELECT statements using the builder pattern.'],l10:['Implement a thread-safe singleton in Python. Why is singleton often called an anti-pattern?'],
+l11:['Design a parking lot with several floors, vehicle sizes and hourly pricing.'],l12:['Design and code an LRU cache with O(1) get and put.'],l13:['Design a vending machine with idle, has-money, dispensing and out-of-stock states.'],l14:['Design a logging framework with levels, several sinks and formatters.'],l15:['Design movie ticket booking with shows, seats and seat locking during payment.'],l16:['Design tic-tac-toe for an n by n board with O(1) win detection.'],l17:['Design snake and ladder for several players with a configurable board and dice.'],l18:['Design a library management system: members, loans, reservations and fines.'],l19:['Design a notification service with channels, templates, retries and rate limits.'],l20:['Design an elevator system for a building with several lifts and a scheduling strategy.'],
+m01:['Build Splitwise in 90 minutes: users, groups, equal, exact and percentage splits, and a simplified balance view.'],m02:['Build an elevator controller in 90 minutes for several lifts, with requests from floors and from inside the car.'],m03:['Build a rate limiter library in 90 minutes supporting token bucket and sliding window per user.'],m04:['Build a booking system in 90 minutes with conflict detection and cancellation.'],m05:['Build an in-memory key-value store in 90 minutes with get, set, delete, TTL and nested transactions.'],m06:['Build snake and ladder in 90 minutes for n players, with a driver that plays a full game.'],m07:['Build a parking lot in 90 minutes with entry, exit, slot allocation and fee calculation.'],m08:['Build a task scheduler in 90 minutes with priorities, delays, recurring tasks and a worker pool.'],m09:['Build a food ordering system in 90 minutes: restaurants, menus, cart, order assignment and status.'],m10:['Build a pub-sub system in 90 minutes with topics, consumer offsets and replay.'],m11:['Build a cab booking system in 90 minutes: riders, drivers, nearest-driver matching and trip billing.'],
+b01:['Tell me about yourself.'],b02:['Why are you leaving your current role?'],b05:['Walk me through your resume.'],b03:['Why do you want to work here, and why this role?'],b04:['What are your strengths, and what is a real weakness you are working on?'],b10:['Tell me about a project you owned from start to finish.'],b11:['What is the hardest technical problem you have solved?'],b12:['Tell me about a conflict with a teammate or stakeholder and how you resolved it.'],b13:['Tell me about a time you failed. What did you change afterwards?'],b14:['Tell me about a time you had to deliver against a tight deadline.'],b15:['Tell me about a time you disagreed with a decision. What did you do?'],b16:['Tell me about a time you led or mentored others.'],b17:['Tell me about a time you had to make progress with unclear requirements.'],b18:['Tell me about a time you went beyond what was asked for a customer or user.'],b19:['Tell me about a decision where you had to trade one good thing for another.'],b20:['What questions do you have for us?'],b21:['What are your salary expectations, and when can you join?'],b22:['We would like to make you an offer at this number. How do you respond?'],
+a01:['Explain self-attention step by step. Why is the dot product scaled by the square root of the key dimension?'],a02:['How does byte pair encoding work? What limits the context window, and what happens when you exceed it?'],a03:['Compare temperature, top-k and top-p sampling. What would you set for code generation, and why?'],a04:['What is an embedding, and why use cosine similarity? How would you choose an embedding model?'],a05:['When does few-shot beat zero-shot? How do you get reliable JSON out of a model?'],a06:['Walk through a RAG pipeline from ingestion to the final answer, naming where each failure can occur.'],a07:['Compare fixed-size, recursive and semantic chunking. How do you choose chunk size and overlap?'],a08:['How does HNSW work, and how does it differ from IVF? What trades recall against latency?'],a09:['Why combine BM25 with dense retrieval? What does a cross-encoder reranker add, and what does it cost?'],a10:['How do you evaluate retrieval and generation separately in RAG? Define faithfulness and recall at k.'],a11:['Design an LLM-as-judge evaluation. What biases does it have, and how do you correct for them?'],a12:['How does function calling work end to end? How do you handle a malformed or failed tool call?'],a13:['Explain the ReAct loop. How do you stop an agent looping forever or running up cost?'],a14:['When is a multi-agent design worth it over one agent? How is state shared and checkpointed in a graph-based orchestrator?'],a15:['What is the Model Context Protocol, and how does it differ from plain function calling?'],a16:['Prompting, RAG or fine-tuning: how do you decide? Explain LoRA and how you choose the rank.'],a17:['What does quantisation do to a model, and what breaks at 4 bits? What does continuous batching buy you?'],a18:['List every lever for cutting LLM cost and latency, and rank them for a chat product.'],a19:['What is indirect prompt injection? Describe a layered defence for an agent that reads web pages.'],a20:['Why do LLMs hallucinate, and how would you detect and reduce it in production?'],a21:['What would you trace and log in a production LLM app? How do you version prompts and roll back?'],a22:['Explain the bias and variance trade-off. When would you optimise for precision over recall?'],a23:['Budget the latency of a real-time voice agent across speech-to-text, the LLM and text-to-speech. How do you handle interruptions?'],
+c01:['Implement cosine similarity and top-k retrieval over a list of vectors without a vector library.'],c02:['Implement a text chunker with overlap that never splits a sentence.'],c03:['Implement BM25 scoring from scratch for a small corpus.'],c04:['Build a minimal RAG pipeline: chunk, embed, retrieve and answer with citations.'],c05:['Implement an agent loop with tool dispatch, error handling and a step budget, without a framework.'],c06:['Write a FastAPI endpoint that streams tokens to the client with server-sent events.'],c07:['Write an async batch caller with a concurrency limit, retries with jitter and per-item error isolation.'],c08:['Parse and validate model output against a Pydantic schema, retrying with the error message on failure.'],c09:['Implement an LLM response cache with exact-match and semantic lookup, plus a TTL.'],c10:['Implement conversation memory that stays inside a token budget by summarising older turns.'],c11:['Write an evaluation harness that scores a RAG system on a small labelled set.'],c12:['Implement scaled dot-product attention with a causal mask in NumPy.'],
+g01:['Design an enterprise RAG assistant over 10 million documents with per-user permissions.'],g02:['Design a platform for multi-step agent workflows with retries, human approval and audit logs.'],g03:['Design evaluation and monitoring for an LLM product: offline evals, online signals and a release gate.'],g04:['Design a real-time voice agent for customer calls that responds in under a second.'],g05:['Design a customer support bot that can take real actions, with guardrails and escalation to humans.'],g06:['Design multi-tenant document Q&A where no tenant can ever see another tenant’s data.'],g07:['Design an LLM gateway: routing across providers, failover, caching, budgets and rate limits.'],g08:['Design semantic search over a catalogue of 100 million products.'],
+p01:['What is the GIL? When would you use threads, processes or asyncio?'],p02:['How does the asyncio event loop work? What happens if you call a blocking function inside a coroutine?'],p03:['What is the difference between an iterator and a generator? Write a decorator that times a function.'],p04:['How does a context manager work? Explain reference counting and the garbage collector.'],p05:['How does dependency injection work in FastAPI? When should an endpoint be async def rather than def?'],p06:['How does JWT authentication work, and how do you revoke a token? Outline the OAuth authorisation code flow.'],p07:['Write a query for the second-highest salary in each department using a window function.'],p08:['When does a query not use an index? Explain the isolation levels and one anomaly each prevents.'],p09:['Compare cache-aside with write-through caching. How do you make a POST endpoint idempotent?'],p10:['What is the difference between an image and a container? Describe the CI/CD pipeline you would set up for an API.'],p11:['Pick two AWS services you have used. Explain how they work and why you chose them.'],
+j01:['Walk me through your RAG project. Why that chunking, that retriever and that model, and how did you measure quality?'],j02:['Walk me through your agent project. Why that orchestration, and what broke in production?'],j03:['Walk me through your voice project. Where did the latency go, and how did you reduce it?'],j04:['Walk me through your resume in three minutes, then answer two follow-up questions aloud.']
+};
+var LIVE_FROM=9,PART_NAMES={live:'Live mocks',dsa:'DSA',sd:'System design',lld:'LLD and machine coding',ai:'AI rounds',beh:'Behavioural'},tick=null;
+function testParts(w){
+  var skip={'Mock interviews':1,'Practice':1,'Revision':1,'Company question bank':1},parts=[];
+  function items(tid){var out=[];TRACKS.forEach(function(t){if(t.id===tid)t.groups.forEach(function(g){if(!skip[g.name])g.items.forEach(function(it){if(it.w===w)(QS[it.id]||[it.full||it.t]).forEach(function(q){out.push(q);});});});});return out;}
+  function add(k,name,mins,task,list){if(list.length||k==='live')parts.push({k:k,name:name,mins:mins,task:task,list:list});}
+  if(w>=LIVE_FROM)add('live','Live mock interview',60,'Book and sit one live mock this week, rotating between DSA, system design and AI rounds. Score how it went and note the feedback you got.',[]);
+  add('dsa','DSA, timed',90,'Pick three problems below that you have not solved recently and give each one 30 minutes. No hints and no editorial until the timer ends.',items('dsa'));
+  add('sd','System design',45,'Answer one design question in full from a blank page, speaking aloud as you would to an interviewer. Give a two-minute answer to each of the others.',items('system-design'));
+  add('lld','LLD and machine coding',60,'Pick one build question and write working code from scratch, without opening your earlier solution. Answer the others aloud.',items('lld'));
+  add('ai','AI rounds',30,'Answer each question below aloud in about three minutes, then check yourself against your notes. For a coding question, write the code.',items('ai'));
+  add('beh','Behavioural',15,'Answer each question below aloud in two minutes or less, and record yourself.',items('behavioural'));
+  return parts;
+}
+function testsDone(){var n=0,k;for(k in state.tests.weeks)if(state.tests.weeks[k].done)n++;return n;}
+function testScore(w){
+  var rec=state.tests.weeks['w'+w],parts=testParts(w),got=0,n=0;
+  if(rec&&rec.scores)parts.forEach(function(p){if(rec.scores[p.k]!=null){got+=rec.scores[p.k];n++;}});
+  return {got:got,max:parts.length*5,scored:n};
+}
+function clockText(ms){var s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+':'+pad(s%60)+' left';}
+function startTimer(key,mins,label){
+  ui.timer={key:key,end:Date.now()+mins*60000,label:label};
+  if(!tick)tick=setInterval(function(){
+    if(!ui.timer){clearInterval(tick);tick=null;return;}
+    var left=ui.timer.end-Date.now(),el=document.getElementById('clock');
+    if(el)el.textContent=clockText(left);
+    if(left<=0){toast('Time is up: '+ui.timer.label);ui.timer=null;clearInterval(tick);tick=null;render();}
+  },1000);
+  render();
+}
+function setScore(w,parts,k,v){
+  var key='w'+w,rec=state.tests.weeks[key]||{scores:{},note:''},was=!!rec.done;
+  rec.scores[k]=v;
+  if(!was&&parts.every(function(p){return rec.scores[p.k]!=null;}))rec.done=dkey(now());
+  state.tests.weeks[key]=rec;save('tests');render();
+  if(!was&&rec.done){var sc=testScore(w);toast('Week '+w+' test complete: '+sc.got+' of '+sc.max);confetti(window.innerWidth/2,window.innerHeight/3,60);}
+}
+function viewTests(){
+  var out=[],idx=dayIndex(now()),due=Math.max(0,Math.min(WEEKS,Math.floor((idx-1)/7))),w,k;
+  out.push(h('h2',{style:'margin-top:.25rem',text:'Weekly tests'}));
+  out.push(h('p',{class:'sub',text:'Every Sunday, test yourself on the whole week that just ended: closed book, on a timer, scored honestly. You run these yourself until the end of January. From February, each week adds one live mock on a platform.'}));
+  var lp=h('p',{class:'sub'},'For live mocks from February: ');
+  [['Exponent peer practice','https://www.tryexponent.com/practice'],['DSA mocks','https://www.tryexponent.com/practice/data-structures-and-algorithms-mock-interviews'],['system design mocks','https://www.tryexponent.com/practice/system-design-mock-interviews']].forEach(function(l,i){if(i)app(lp,', ');app(lp,h('a',{class:'link',style:'font-size:inherit',href:l[1],target:'_blank',rel:'noopener noreferrer',text:l[0]}));});
+  app(lp,'.');out.push(lp);
+  var sum=0,cnt=0,per={};
+  for(w=1;w<=WEEKS;w++){var rec=state.tests.weeks['w'+w];if(rec&&rec.done){var sc=testScore(w);sum+=sc.got/sc.max;cnt++;}
+    if(rec&&rec.scores)for(k in rec.scores){per[k]=per[k]||[0,0];per[k][0]+=rec.scores[k];per[k][1]++;}}
+  var weak=null;for(k in per){var av=per[k][0]/per[k][1];if(PART_NAMES[k]&&(!weak||av<weak[1]))weak=[k,av];}
+  out.push(h('div',{class:'stats'},
+    h('div',null,h('strong',{text:cnt+' of '+WEEKS}),h('span',{text:'Tests completed'})),
+    h('div',null,h('strong',{text:cnt?Math.round(sum/cnt*100)+'%':'–'}),h('span',{text:'Average score'})),
+    h('div',null,h('strong',{style:'font-size:1.25rem',text:weak?PART_NAMES[weak[0]]:'–'}),h('span',{text:weak?'Weakest area, averaging '+weak[1].toFixed(1)+' of 5':'Weakest area, once you have scores'}))));
+  var tr=h('div',{class:'trend',role:'img','aria-label':'Score for each weekly test'});
+  for(w=1;w<=WEEKS;w++){var s2=testScore(w);tr.appendChild(h('div',{title:'Week '+w},h('i',{style:'height:'+(s2.scored?s2.got/s2.max*100:0)+'%'})));}
+  out.push(tr);
+  out.push(h('div',{class:'calnote',style:'max-width:none'},h('span',{text:'Week 1'}),h('span',{text:'Score by week'}),h('span',{text:'Week '+WEEKS})));
+  out.push(h('h2',{text:'How to score'}));
+  out.push(h('p',{class:'sub',text:'5 means clean and inside the time. 4 means right with small slips. 3 means partly right or over time. 2 means mostly stuck. 1 means you could not start. 0 means skipped.'}));
+  out.push(h('h2',{text:'Tests'}));
+  for(w=1;w<=WEEKS;w++){(function(w){
+    var parts=testParts(w),rec=state.tests.weeks['w'+w]||{scores:{},note:''},sc=testScore(w),day=addDays(START,w*7+1),key='test|'+w;
+    var open=key in ui.open?ui.open[key]:w===Math.max(1,due);
+    var det=h('details',{class:'grp',open:open},h('summary',null,
+      h('span',{text:'Week '+w+' test, '+fmt(day)+(w>=LIVE_FROM?', with a live mock':'')}),
+      h('span',{text:sc.scored?sc.got+' of '+sc.max:(w<=due?'Not taken yet':'Upcoming')})));
+    det.addEventListener('toggle',function(){ui.open[key]=det.open;});
+    parts.forEach(function(p){
+      var tk=w+'|'+p.k,running=ui.timer&&ui.timer.key===tk,box=h('div',{class:'part'},
+        h('h3',{text:p.name+', '+p.mins+' minutes'}),h('p',{text:p.task}));
+      if(p.list.length){var ul=h('ol');p.list.forEach(function(x){ul.appendChild(h('li',{text:x}));});box.appendChild(ul);}
+      box.appendChild(h('p',null,running?h('span',{class:'clock',id:'clock',text:clockText(ui.timer.end-Date.now())}):null,
+        h('button',{type:'button',class:'link',text:running?'Stop timer':'Start '+p.mins+'-minute timer',onclick:function(){if(running){ui.timer=null;render();}else startTimer(tk,p.mins,p.name);}})));
+      var chips=h('div',{class:'chips',role:'group','aria-label':'Score for '+p.name});
+      [0,1,2,3,4,5].forEach(function(v){chips.appendChild(h('button',{type:'button','aria-pressed':rec.scores[p.k]===v?'true':'false',text:String(v),onclick:function(){setScore(w,parts,p.k,v);}}));});
+      box.appendChild(chips);det.appendChild(box);
+    });
+    det.appendChild(h('input',{class:'note',type:'text',style:'margin-bottom:1rem','aria-label':'Notes for week '+w+' test',placeholder:'What went wrong, and what to fix next week',value:rec.note||'',onchange:function(e){
+      var r2=state.tests.weeks['w'+w]||{scores:{},note:''};r2.note=e.target.value.trim();state.tests.weeks['w'+w]=r2;save('tests');}}));
+    out.push(det);
+  })(w);}
   return out;
 }
 
