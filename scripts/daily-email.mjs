@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const SITE = process.env.SITE_URL || 'https://interview-prep-tracker-o08v.netlify.app/';
+const SITE = process.env.SITE_URL || 'https://vgirkar.github.io/interview-prep-tracker/';
 const TZ = process.env.PLAN_TZ || 'Asia/Kolkata';
 const mode = process.env.MODE === 'evening' ? 'evening' : 'morning';
 
