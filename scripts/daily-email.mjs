@@ -1,4 +1,4 @@
-// Builds the daily email from the plan inside index.html, so the site stays the single source of truth.
+// Builds the daily email from plan.js, the same plan the site renders, so it stays the single source of truth.
 import fs from 'node:fs';
 import vm from 'node:vm';
 
@@ -6,10 +6,10 @@ const SITE = process.env.SITE_URL || 'https://interview-prep-tracker-o08v.netlif
 const TZ = process.env.PLAN_TZ || 'Asia/Kolkata';
 const mode = process.env.MODE === 'evening' ? 'evening' : 'morning';
 
-const html = fs.readFileSync('index.html', 'utf8');
+const html = fs.readFileSync('plan.js', 'utf8');
 const a = html.indexOf('/* ---------- plan ---------- */');
 const b = html.indexOf('/* ---------- dates ---------- */');
-if (a < 0 || b < 0) throw new Error('Plan section not found in index.html');
+if (a < 0 || b < 0) throw new Error('Plan section not found in plan.js');
 const ctx = {};
 vm.runInNewContext(html.slice(a, b) + '\nthis.out={TRACKS,LINKS,START,DAYS,SPLIT,HOURS_DAY};', ctx);
 const { TRACKS, LINKS, START, DAYS, SPLIT, HOURS_DAY } = ctx.out;
