@@ -24,6 +24,7 @@
     <nav class="nav" id="nav" aria-label="Sections"></nav>
     <div class="side-foot">
       <div class="dayprog" id="dayprog"></div>
+      <div data-account hidden></div>
       <div class="status" data-sync role="status">Connecting</div>
       <div class="side-actions">
         <button type="button" class="ibtn" data-search aria-label="Search and commands" title="Search and commands (Ctrl or Cmd K)"></button>
@@ -38,6 +39,7 @@
         <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
         <span><b>Interview prep</b><small>5 Dec to 12 Mar</small></span>
       </a>
+      <div data-account hidden></div>
       <div class="status" data-sync role="status">Connecting</div>
       <button type="button" class="ibtn" data-search aria-label="Search and commands"></button>
       <button type="button" class="ibtn" data-theme-btn title="Switch theme"></button>
@@ -51,8 +53,10 @@
 <div class="ftimer" id="ftimer" role="status" aria-live="polite"></div>
 <div class="tip" id="tip" role="tooltip"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="firebase-config.js"></script>
 <script src="plan.js"></script>
 <script src="questions.js"></script>
+<script>if(location.protocol!=="file:"){var cs=document.createElement("script");cs.type="module";cs.src="cloud.js";document.body.appendChild(cs);}</script>
 <script src="app.js"></script>
 </body>
 </html>

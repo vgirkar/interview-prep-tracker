@@ -1,0 +1,12 @@
+{
+  "name": "interview-prep-tracker",
+  "private": true,
+  "description": "A 14-week interview prep tracker. Static site, optional Firebase accounts and sync.",
+  "scripts": {
+    "serve": "python3 -m http.server 8765",
+    "emulators": "npx -y firebase-tools@13 emulators:start --only auth,firestore --project demo-prep",
+    "rules": "npx -y firebase-tools@13 deploy --only firestore:rules",
+    "bundle": "node scripts/bundle.mjs",
+    "email": "node scripts/daily-email.mjs"
+  }
+}

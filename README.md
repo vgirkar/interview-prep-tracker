@@ -2,7 +2,7 @@
 
 A single-page tracker for a 14-week interview prep plan (5 December to 12 March): DSA, system design, LLD and machine coding, behavioural, applications and AI rounds.
 
-Open `index.html`, or deploy the folder to any static host. There is no build step and nothing to install. Progress is saved in the browser on each device, and can be exported and restored as a JSON backup from Settings.
+Open `index.html`, or deploy the folder to any static host. There is no build step and nothing to install. Progress is saved in the browser on each device, and can be exported and restored as a JSON backup from Settings. With a Firebase project configured (see `docs/CLOUD_SETUP.md`), people sign in with Google or an email link and their progress syncs across devices, live.
 
 ## Files
 
@@ -10,7 +10,8 @@ Open `index.html`, or deploy the folder to any static host. There is no build st
 - `app.css`: styles, including light and dark themes.
 - `plan.js`: the plan itself: tracks, items, dates and links, including every problem of Striver’s A2Z sheet (455 problems with a practice link and, where one exists, a video), the Hello Interview design breakdowns and key technologies, and the awesome-low-level-design problem list. Edit this file to change the plan.
 - `questions.js`: question banks keyed by item: weekly test prompts, high-level and low-level design prompts, and Outcome School’s AI engineering question bank (Apache 2.0) with answer links.
-- `app.js`: the app: the Today dashboard, track pages, applications board, weekly tests, search and commands, focus timer, backups.
+- `app.js`: the app: the Today dashboard, track pages, applications board, weekly tests, search and commands, focus timer, backups, and the sync layer with device-to-account merging.
+- `cloud.js` and `firebase-config.js`: optional accounts and sync on Firebase Auth and Firestore. `firestore.rules` gives each user access to their own data only. `npm run emulators` runs it all locally.
 - `scripts/daily-email.mjs` and `scripts/send_mail.py`: build and send the morning plan and evening reminder emails from `plan.js`, run by the GitHub Actions workflow in `.github/workflows/daily-email.yml`.
 
 ## Using it
@@ -20,6 +21,7 @@ Open `index.html`, or deploy the folder to any static host. There is no build st
 - Tracks: every item with its date, learning links, notes, saved links, a revise flag and, where there is one, a question list to expand. Filter by today, this week, not done or to revise, or search.
 - Applications: a board you can drag cards across, or a list. Status, next step and weekly target.
 - Weekly tests: timed parts with questions drawn from that week, scored 0 to 5, with a score trend.
+- Settings: plan start date and hours a day per person, theme, backups, sign in and out.
 - Rest days: if a day is not possible, press Rest day on it (or "Can’t practise today" in the hero). Nothing is planned for that day, everything after it moves one day later, and the plan ends a day later. Undo it the same way. The daily email does not know about rest days taken on the site, so on the days after one it runs a day ahead; the site is the source of truth.
 - Press Ctrl K or Cmd K anywhere to jump to a section, search items or run an action such as logging a problem or starting a focus session.
 

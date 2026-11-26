@@ -486,3 +486,13 @@ details.grp>.body>.appcard:first-child{margin-top:.25rem}
 .heat .cell.rest{background:repeating-linear-gradient(135deg,var(--heat0) 0 3px,var(--line-2) 3px 5px)}
 .heat .cell.rest[data-l="1"],.heat .cell.rest[data-l="2"],.heat .cell.rest[data-l="3"]{background:repeating-linear-gradient(135deg,var(--heat1) 0 3px,var(--line-2) 3px 5px)}
 .legend i.rest{background:repeating-linear-gradient(135deg,var(--heat0) 0 3px,var(--line-2) 3px 5px)}
+
+/* ---------- accounts ---------- */
+.acct{width:2.375rem;height:2.375rem;border-radius:50%;border:1px solid var(--line);background:var(--primary-soft);color:var(--primary-ink);font-weight:700;display:grid;place-content:center;overflow:hidden;padding:0;flex:none}
+.acct img{width:100%;height:100%;object-fit:cover;display:block}
+.side-foot [data-account]{display:flex}
+.side-foot [data-account] .btn{width:100%}
+.topbar [data-account]{display:inline-flex;align-items:center}
+[data-account][hidden]{display:none}
+.or{display:flex;align-items:center;gap:.75rem;color:var(--faint);font-size:.8125rem;margin:1rem 0}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
