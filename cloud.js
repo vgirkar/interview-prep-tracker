@@ -65,7 +65,8 @@ if (!cfg || !cfg.apiKey || !cfg.projectId) {
       return signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, email, email_verified: true, name: email.split('@')[0] })));
     },
     doc(name) {
-      const ref = () => doc(db, 'users', cloud.user.id, 'docs', name);
+      // Email preferences live in a top-level collection so the mail job can list them; everything else sits under the user.
+      const ref = () => (name === 'mail' ? doc(db, 'mail', cloud.user.id) : doc(db, 'users', cloud.user.id, 'docs', name));
       return {
         get() { return getDoc(ref()).then((s) => ({ exists: s.exists(), data: () => s.data() })); },
         set(data) { return setDoc(ref(), Object.assign({}, data, { updatedAt: serverTimestamp() })); },

@@ -1,37 +1,53 @@
 name: Daily prep email
 
+# Runs every hour. Each signed-in person who turned emails on gets the morning plan between 7 and 10 and the evening
+# reminder between 21 and 23 in their own timezone, once a day each. Without a Firebase service account it falls back
+# to one email for MAIL_TO at 7 and 21 in Asia/Kolkata, from the plan's default dates.
 on:
   schedule:
-    - cron: '30 1 * * *'   # 07:00 India time: today's plan
-    - cron: '30 15 * * *'  # 21:00 India time: reminder to log progress
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       mode:
-        description: 'morning (plan) or evening (reminder)'
-        default: 'morning'
+        description: 'auto, morning or evening'
+        default: 'auto'
       date:
-        description: 'Preview a date as YYYY-MM-DD, or leave empty for today'
+        description: 'Preview a date as YYYY-MM-DD (writes outbox, sends nothing)'
         default: ''
+      dry_run:
+        description: 'true lists who would get what without sending'
+        default: 'true'
 
 permissions:
   contents: read
+
+concurrency: daily-email
 
 jobs:
   send:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build the email
-        id: build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the mail and Firestore clients
+        run: npm install --no-save --no-audit --no-fund --no-package-lock firebase-admin@12 nodemailer@6
+      - name: Build and send
         env:
-          MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 15 * * *' && 'evening' || 'morning') || inputs.mode }}
-          FORCE_DATE: ${{ inputs.date }}
-          PREVIEW: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
-        run: node scripts/daily-email.mjs
-      - name: Send the email
-        if: steps.build.outputs.send == 'true'
-        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: python3 scripts/send_mail.py
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode != 'auto' && inputs.mode || '' }}
+          FORCE_DATE: ${{ inputs.date }}
+          PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.date != '' && '1' || '' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true' && '1' || '' }}
+        run: node scripts/daily-email.mjs
+      - name: Keep the built emails for inspection
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: outbox
+          path: outbox/
+          if-no-files-found: ignore

@@ -496,3 +496,5 @@ details.grp>.body>.appcard:first-child{margin-top:.25rem}
 [data-account][hidden]{display:none}
 .or{display:flex;align-items:center;gap:.75rem;color:var(--faint);font-size:.8125rem;margin:1rem 0}
 .or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.tog{display:inline-flex;align-items:center;gap:.5rem;font-size:.9375rem;font-weight:600;cursor:pointer}
+.tog input{width:1.125rem;height:1.125rem;accent-color:var(--primary);cursor:pointer}

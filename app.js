@@ -12,13 +12,21 @@ function fmtShort(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'s
 function now(){return new Date();}
 function curIdx(){return Math.max(0,Math.min(totalDays()-1,dayIndex(now())));}
 function curWeek(){return Math.floor(pd(curIdx())/7)+1;}
-/* Rest days. A plan day is an index into the 98-day plan; a calendar day is days since START. A rest day is a calendar day
-   with nothing planned, and every plan day from it onwards moves one calendar day later, so the plan ends later. */
+/* The calendar. A plan day is an index into the 98-day plan, written for six hours a day. A calendar day is days since
+   START. Hours a day set the pace: at three hours a plan day takes two calendar days, at twelve two plan days fit in one.
+   A rest day is a calendar day with nothing planned; everything after it moves one calendar day later. */
 function pauses(){return state.log.pauses||[];}
-function totalDays(){return DAYS+pauses().length;}
+function factor(){return DEFAULT_HOURS/(HOURS_DAY||DEFAULT_HOURS);}
+function totalDays(){return Math.ceil(DAYS*factor())+pauses().length;}
 function isRest(c){return pauses().indexOf(c)>=0;}
-function pd(c){var n=0;pauses().forEach(function(x){if(x<c)n++;});return c-n;}
-function p2c(d){var P=pauses().slice().sort(function(a,b){return a-b;}),c=d;for(var i=0;i<P.length;i++){if(P[i]<=c)c++;}return c;}
+function restBefore(c){var n=0;pauses().forEach(function(x){if(x<c)n++;});return n;}
+function span(c){var cc=c-restBefore(c),f=factor();return [cc/f,(cc+1)/f];}
+function pd(c){return Math.max(0,Math.min(DAYS-1,Math.floor(span(c)[0]+1e-9)));}
+function onDay(it,c){var sp=span(c);return it.d0<sp[1]-1e-9&&it.d+1>sp[0]+1e-9;}
+function isLate(it,c){return it.d+1<=span(c)[0]+1e-9;}
+function withRest(c){var P=pauses().slice().sort(function(a,b){return a-b;});for(var i=0;i<P.length;i++){if(P[i]<=c)c++;}return c;}
+function p2c(d){return withRest(Math.floor(d*factor()+1e-9));}
+function p2cEnd(d){var f=factor();return withRest(Math.max(Math.floor(d*f+1e-9),Math.ceil((d+1)*f-1e-9)-1));}
 function toggleRest(c){
   var P=pauses().slice(),i=P.indexOf(c);
   if(i>=0)P.splice(i,1);else P.push(c);
@@ -31,8 +39,8 @@ function weekStart(w){return addDays(START,(w-1)*7);}
 /* ---------- state ---------- */
 var LS='prep-tracker-v1';
 var DEFAULT_START=dkey(START),DEFAULT_HOURS=HOURS_DAY;
-var state={checks:{done:{},revise:{},notes:{},links:{}},log:{days:{},total:474,badges:{},pauses:[]},apps:{list:[]},custom:{items:[]},tests:{weeks:{}},profile:{start:DEFAULT_START,hours:DEFAULT_HOURS,name:'',email:''}};
-var DOCS=['checks','log','apps','custom','tests','profile'];
+var state={checks:{done:{},revise:{},notes:{},links:{}},log:{days:{},total:474,badges:{},pauses:[]},apps:{list:[]},custom:{items:[]},tests:{weeks:{}},profile:{start:DEFAULT_START,hours:DEFAULT_HOURS,name:'',email:''},mail:{email:'',tz:'',morning:false,evening:false,sent:{}}};
+var DOCS=['checks','log','apps','custom','tests','profile','mail'];
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function norm(name,d){
   d=d&&typeof d==='object'?d:{};
@@ -41,12 +49,15 @@ function norm(name,d){
   if(name==='apps')return {list:Array.isArray(d.list)?d.list:[]};
   if(name==='tests')return {weeks:d.weeks||{}};
   if(name==='profile')return {start:/^\d{4}-\d{2}-\d{2}$/.test(d.start||'')?d.start:DEFAULT_START,hours:Number(d.hours)>=1&&Number(d.hours)<=16?Number(d.hours):DEFAULT_HOURS,name:typeof d.name==='string'?d.name.slice(0,80):'',email:typeof d.email==='string'?d.email.slice(0,120):''};
+  if(name==='mail')return {email:typeof d.email==='string'?d.email.slice(0,120):'',tz:typeof d.tz==='string'?d.tz.slice(0,64):'',morning:!!d.morning,evening:!!d.evening,sent:d.sent&&typeof d.sent==='object'?d.sent:{}};
   return {items:Array.isArray(d.items)?d.items:[]};
 }
 function applyProfile(){
   var p=state.profile,m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(p.start);
   START=m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):new Date(2026,11,5);
   HOURS_DAY=p.hours||DEFAULT_HOURS;
+  DAY_DSA=Math.max(1,Math.round(5*HOURS_DAY/DEFAULT_HOURS));
+  DAY_ITEMS=Math.max(1,Math.round(3*HOURS_DAY/DEFAULT_HOURS));
 }
 function hasContent(name){
   var s=state[name];
@@ -55,6 +66,7 @@ function hasContent(name){
   if(name==='apps')return s.list.length>0;
   if(name==='tests')return Object.keys(s.weeks).length>0;
   if(name==='profile')return s.start!==DEFAULT_START||s.hours!==DEFAULT_HOURS||!!s.name||!!s.email;
+  if(name==='mail')return s.morning||s.evening;
   return s.items.length>0;
 }
 function loadLocal(){try{var r=localStorage.getItem(LS);if(r){var o=JSON.parse(r);DOCS.forEach(function(n){state[n]=norm(n,o[n]);});}}catch(e){}}
@@ -127,6 +139,7 @@ function mergeDoc(name,r,l){
     var custom=l.start!==DEFAULT_START||l.hours!==DEFAULT_HOURS;
     return {start:custom?l.start:r.start,hours:custom?l.hours:r.hours,name:r.name||l.name||'',email:r.email||l.email||''};
   }
+  if(name==='mail')return Object.assign({},l,r);
   return l;
 }
 function stopWatching(){watchers.forEach(function(u){try{u();}catch(e){}});watchers=[];}
@@ -467,7 +480,7 @@ function renderNav(r){
   dayprogEl.textContent='';
   dayprogEl.appendChild(h('b',{text:idx<0?'Starts '+fmtShort(START):idx>=T?'Plan complete':rest?'Rest day':'Day '+(tp+1)+' of '+DAYS}));
   dayprogEl.appendChild(h('div',{class:'mini',style:'max-width:none'},h('i',{style:'width:'+((idx<0?0:tp+(rest?0:1))/DAYS*100)+'%'})));
-  dayprogEl.appendChild(h('div',{style:'margin-top:.4rem',text:idx<0?'Fourteen weeks, to '+endS:idx>=T?'Ended '+endS:(T-1-ci)+' days to go, week '+curWeek()+' of '+WEEKS}));
+  dayprogEl.appendChild(h('div',{style:'margin-top:.4rem',text:idx<0?Math.ceil(T/7)+' weeks, to '+endS:idx>=T?'Ended '+endS:(T-1-ci)+' days to go, week '+curWeek()+' of '+WEEKS}));
   document.querySelectorAll('.brand small').forEach(function(el){el.textContent=fmtShort(START)+' to '+endS;});
   document.querySelectorAll('[data-account]').forEach(function(el){
     el.textContent='';
@@ -527,13 +540,14 @@ function groupDetails(key,name,done,total,children,o){
   return det;
 }
 function itemRow(it,track,cw,showTrack,sfx){
-  var done=!!state.checks.done[it.id],rev=!!state.checks.revise[it.id],note=state.checks.notes[it.id]||'',cid='c_'+it.id+(sfx||''),today=pd(curIdx());
+  var done=!!state.checks.done[it.id],rev=!!state.checks.revise[it.id],note=state.checks.notes[it.id]||'',cid='c_'+it.id+(sfx||'');
   var meta=h('div',{class:'meta'});
   if(showTrack)meta.appendChild(h('span',{class:'pill tr',style:'--col:'+tcol(track.id)},h('i',{class:'dot',style:'--col:'+tcol(track.id)+';width:.5rem;height:.5rem'}),track.name));
   if(it.p)meta.appendChild(h('span',{class:'pill d'+it.diff,text:it.diff==='E'?'Easy':it.diff==='M'?'Medium':it.diff==='H'?'Hard':'Problem'}));
   if(it.w){
-    if(!done&&it.d<today&&dayIndex(now())>=0)meta.appendChild(h('span',{class:'pill late'},icon('flame'),'Was due '+fmt(addDays(START,p2c(it.d)))));
-    else meta.appendChild(h('span',{class:'pill'},icon('calendar'),(it.d0<it.d?fmtShort(addDays(START,p2c(it.d0)))+' to '+fmtShort(addDays(START,p2c(it.d))):fmt(addDays(START,p2c(it.d))))+', week '+it.w));
+    var c0=p2c(it.d0),c1=p2cEnd(it.d);
+    if(!done&&isLate(it,curIdx())&&dayIndex(now())>=0)meta.appendChild(h('span',{class:'pill late'},icon('flame'),'Was due '+fmt(addDays(START,c1))));
+    else meta.appendChild(h('span',{class:'pill'},icon('calendar'),(c0<c1?fmtShort(addDays(START,c0))+' to '+fmtShort(addDays(START,c1)):fmt(addDays(START,c1)))+', week '+it.w));
   }
   function ext(label,url){return h('a',{class:'ilink',href:url,target:'_blank',rel:'noopener noreferrer'},label,icon('ext'));}
   var saved=state.checks.links[it.id]||'',bank=!it.p&&QBANK[it.id]&&QBANK[it.id].length?QBANK[it.id]:null;
@@ -582,9 +596,9 @@ function viewToday(){
   var out=[],idx=dayIndex(now()),ci=curIdx(),cw=curWeek(),act=activity(),st=streak(act),lv=level(),todayK=dkey(now()),T=totalDays(),tp=pd(ci),restToday=isRest(ci)&&idx>=0&&idx<T,nRest=pauses().length,endS=fmtShort(addDays(START,T-1));
   if(ui.selDay==null)ui.selDay=ci;
   var left=T-1-ci;
-  var headline=idx<0?'Starts '+fmtShort(START):idx>=T?'Fourteen weeks done':restToday?'Rest day':'Week '+cw+' of '+WEEKS;
-  var sub=idx<0?'Your plan runs for fourteen weeks, from '+START.toLocaleDateString('en-GB',{day:'numeric',month:'long'})+' to '+endS+'. Everything you tick before then still counts.':idx>=T?'The plan ended on '+endS+'. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go'+(nRest?', ending '+endS+' after '+nRest+(nRest===1?' rest day':' rest days'):'')+'.';
-  var openToday=0,openP=0;if(!restToday)TRACKS.forEach(function(t){allItems(t).forEach(function(it){if(it.w&&it.d0<=tp&&tp<=it.d&&!state.checks.done[it.id]){if(it.p)openP++;else openToday++;}});});
+  var headline=idx<0?'Starts '+fmtShort(START):idx>=T?'Plan complete':restToday?'Rest day':'Week '+cw+' of '+WEEKS;
+  var sub=idx<0?'Your plan runs for '+Math.ceil(T/7)+' weeks at '+HOURS_DAY+' hours a day, from '+START.toLocaleDateString('en-GB',{day:'numeric',month:'long'})+' to '+endS+'. Everything you tick before then still counts.':idx>=T?'The plan ended on '+endS+'. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go'+(nRest?', ending '+endS+' after '+nRest+(nRest===1?' rest day':' rest days'):'')+'.';
+  var openToday=0,openP=0;if(!restToday)TRACKS.forEach(function(t){allItems(t).forEach(function(it){if(it.w&&onDay(it,ci)&&!state.checks.done[it.id]){if(it.p)openP++;else openToday++;}});});
   var bento=h('div',{class:'bento'});
   function withIndex(el,i){el.style.setProperty('--i',i);bento.appendChild(el);}
 
@@ -621,7 +635,7 @@ function viewToday(){
   })(i);}
   heat.appendChild(h('div'));heat.appendChild(months);heat.appendChild(days);heat.appendChild(grid);
   withIndex(h('section',{class:'card b-3'},
-    h('div',{class:'card-h'},h('h2',{text:'Fourteen weeks at a glance'}),h('span',{class:'aside',text:'Tap a day to see its plan'})),heat,
+    h('div',{class:'card-h'},h('h2',{text:Math.ceil(T/7)+' weeks at a glance'}),h('span',{class:'aside',text:'Tap a day to see its plan'})),heat,
     h('div',{class:'heat-foot'},h('span',null,cnt('active',active),active===1?' active day so far':' active days so far',nRest?', '+nRest+(nRest===1?' rest day':' rest days'):''),h('span',{class:'legend'},'Less',h('i'),h('i',{'data-l':'1'}),h('i',{'data-l':'2'}),h('i',{'data-l':'3'}),'More',h('i',{class:'rest'}),'Rest'))),2);
 
   var sd=addDays(START,ui.selDay),sk=dkey(sd),day=state.log.days[sk]||{},ticked=tickedOn(sk);
@@ -635,7 +649,7 @@ function viewToday(){
     h('p',{class:'hint',text:'Ticked sheet problems count on their own. The stepper is for practice outside the sheet.'}),
     h('div',{class:'focus-row'},h('button',{type:'button',class:'btn soft sm',onclick:function(){startFocus(25);}},icon('timer'),'Focus 25 min'),h('button',{type:'button',class:'btn soft sm',onclick:function(){startFocus(50);}},icon('timer'),'Focus 50 min'))),3);
 
-  var total=PROB_TOTAL,sv=problemsDone(),exp=Math.round(total*Math.min(1,(tp+1)/DSA_DAYS)),diff=sv-Math.round(total*Math.min(1,tp/DSA_DAYS));
+  var total=PROB_TOTAL,sv=problemsDone(),exp=Math.round(total*Math.min(1,span(ci)[1]/DSA_DAYS)),diff=sv-Math.round(total*Math.min(1,span(ci)[0]/DSA_DAYS));
   var paceEl=idx<0?h('span',{class:'aside',text:'Pace starts '+fmtShort(START)}):h('span',{class:'pace '+(diff>=0?'ahead':'behind')},icon(diff>=0?'zap':'flame'),Math.abs(diff)<=2?'On pace':(diff>0?diff+' ahead of pace':Math.abs(diff)+' behind pace'));
   var prog=h('div',{class:'prog'});
   prog.appendChild(h('a',{href:'#dsa'},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'Sheet problems'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
@@ -644,9 +658,9 @@ function viewToday(){
     if(t.id==='dsa')return;
     prog.appendChild(h('a',{href:'#'+t.id},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol(t.id)}),t.name),h('span',{class:'ct',text:c.done+' of '+c.total}),
       h('div',{class:'bar',style:'--col:'+tcol(t.id)},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));});
-  var hw=0;for(var j=(cw-1)*7;j<cw*7;j++){var dd=state.log.days[dkey(addDays(START,p2c(j)))];if(dd)hw+=Number(dd.hours)||0;}
-  prog.appendChild(h('a',{href:'#log',onclick:function(e){e.preventDefault();var el=document.getElementById('log');if(el)el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:var(--warn-fill)'}),'Hours this week'),h('span',{class:'ct',text:hw+' of '+HOURS_DAY*7}),
-    h('div',{class:'bar',style:'--col:var(--warn-fill)'},h('i',{style:'width:'+Math.min(100,hw/(HOURS_DAY*7)*100)+'%'}))));
+  var hw=0,wc0=p2c((cw-1)*7),wc1=p2cEnd(cw*7-1),wgoal=0;for(var j=wc0;j<=wc1;j++){if(isRest(j))continue;wgoal+=HOURS_DAY;var dd=state.log.days[dkey(addDays(START,j))];if(dd)hw+=Number(dd.hours)||0;}
+  prog.appendChild(h('a',{href:'#log',onclick:function(e){e.preventDefault();var el=document.getElementById('log');if(el)el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:var(--warn-fill)'}),'Hours this week'),h('span',{class:'ct',text:hw+' of '+wgoal}),
+    h('div',{class:'bar',style:'--col:var(--warn-fill)'},h('i',{style:'width:'+Math.min(100,wgoal?hw/wgoal*100:0)+'%'}))));
   var wk=appsThisWeek(cw);
   prog.appendChild(h('a',{href:'#applications'},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('applications')}),'Applications'),h('span',{class:'ct',text:state.apps.list.length+' sent, '+wk+' of '+APP_WEEKLY+' this week'}),
     h('div',{class:'bar',style:'--col:'+tcol('applications')},h('i',{style:'width:'+Math.min(100,wk/APP_WEEKLY*100)+'%'}))));
@@ -669,14 +683,15 @@ function viewToday(){
     h('button',{type:'button',class:'ibtn','aria-label':'Next day',disabled:ui.selDay>=T-1,onclick:function(){ui.selDay++;render();}},icon('right')),
     h('button',{type:'button',class:'btn ghost sm',title:'A rest day has nothing planned. Everything from it onwards moves one day later.',onclick:function(){toggleRest(ui.selDay);}},icon('moon'),isRest(ui.selDay)?'Undo rest day':'Rest day'))));
   var sp=pd(ui.selDay),selRest=isRest(ui.selDay);
-  if(!selRest&&sp>=8&&(sp-1)%7===0){var tw=(sp-1)/7;out.push(h('div',{class:'card',style:'display:flex;gap:.75rem;align-items:center;flex-wrap:wrap'},h('span',{class:'tic',style:'--col:'+tcol('weekly-test')},icon('clipboard')),h('span',{style:'flex:1 1 14rem'},'Weekly test day: test yourself on everything from week '+tw+'.'),h('a',{class:'btn soft sm',href:'#weekly-test',text:'Open the week '+tw+' test'})));}
+  var spq=span(ui.selDay),spk=Math.ceil(spq[0]-1e-9);
+  if(!selRest&&spk>=8&&spk<spq[1]-1e-9&&(spk-1)%7===0){var tw=(spk-1)/7;out.push(h('div',{class:'card',style:'display:flex;gap:.75rem;align-items:center;flex-wrap:wrap'},h('span',{class:'tic',style:'--col:'+tcol('weekly-test')},icon('clipboard')),h('span',{style:'flex:1 1 14rem'},'Weekly test day: test yourself on everything from week '+tw+'.'),h('a',{class:'btn soft sm',href:'#weekly-test',text:'Open the week '+tw+' test'})));}
   var planCard=h('div',{class:'card'}),any=false,late=0;
   if(selRest)TRACKS.forEach(function(t){var list=allItems(t).filter(function(it){return it.w&&state.checks.done[it.id]===sk;});if(!list.length)return;any=true;planCard.appendChild(h('div',{class:'grpname'},h('i',{class:'dot',style:'--col:'+tcol(t.id)}),t.name));list.forEach(function(it){planCard.appendChild(itemRow(it,t,cw,false));});});
   else TRACKS.forEach(function(t){
     var list=allItems(t).filter(function(it){
       var dv=state.checks.done[it.id];if(!it.w||(dv&&dv!==sk))return false;if(dv)return true;
-      if(it.d<sp){late++;return ui.showLate;}
-      return it.d0<=sp&&sp<=it.d;});
+      if(isLate(it,ui.selDay)){late++;return ui.showLate;}
+      return onDay(it,ui.selDay);});
     if(!list.length)return;any=true;
     planCard.appendChild(h('div',{class:'grpname'},h('i',{class:'dot',style:'--col:'+tcol(t.id)}),t.name));
     list.forEach(function(it){planCard.appendChild(itemRow(it,t,cw,false));});
@@ -715,7 +730,7 @@ function viewToday(){
 function viewTrack(t){
   var out=[],cw=curWeek(),ci=curIdx(),tp=pd(ci),c=counts(t),f=ui.filter[t.id]||'all',q=(ui.q[t.id]||'').trim().toLowerCase(),items=allItems(t);
   var dueWeek=0,over=0,rev=0;
-  items.forEach(function(it){if(state.checks.done[it.id])return;if(it.w===cw)dueWeek++;if(it.w&&it.d<tp&&dayIndex(now())>=0)over++;if(state.checks.revise[it.id])rev++;});
+  items.forEach(function(it){if(state.checks.done[it.id])return;if(it.w===cw)dueWeek++;if(it.w&&isLate(it,ci)&&dayIndex(now())>=0)over++;if(state.checks.revise[it.id])rev++;});
   out.push(h('div',{class:'page-head'},
     h('div',null,h('h1',{style:'display:flex;align-items:center;gap:.6rem'},h('span',{class:'tic',style:'--col:'+tcol(t.id)},icon(META[t.id].icon)),t.name),h('p',{class:'sub',text:t.intro})),
     TRACK_LINKS[t.id]?h('div',{class:'tools'},TRACK_LINKS[t.id].map(function(l){return h('a',{class:'btn ghost sm',href:l[1],target:'_blank',rel:'noopener noreferrer'},l[0],icon('ext'));})):null));
@@ -723,7 +738,7 @@ function viewTrack(t){
     ring('trk_'+t.id,c.done,c.total,{label:'Done',col:tcol(t.id),main:Math.round(c.total?c.done/c.total*100:0)+'%',small:c.done+' of '+c.total}),
     h('div',{class:'kpis'},kpi(t.id+'_due',dueWeek,'Due this week'),kpi(t.id+'_over',over,'Overdue',over?'warn':null),kpi(t.id+'_rev',rev,'Marked to revise'),t.id==='dsa'?kpi('dsa_solved',solved(),'Problems solved','good'):kpi(t.id+'_open',c.total-c.done,'Still open')));
   if(t.id==='dsa'){
-    var sv=problemsDone(),total=PROB_TOTAL,exp=Math.round(total*Math.min(1,(tp+1)/DSA_DAYS));
+    var sv=problemsDone(),total=PROB_TOTAL,exp=Math.round(total*Math.min(1,span(ci)[1]/DSA_DAYS));
     ov.appendChild(h('div',{class:'prog'},h('a',{href:'#dsa',onclick:function(e){e.preventDefault();}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'Sheet problems ticked'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
       h('div',{class:'bar',style:'--col:'+tcol('dsa')},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}),h('b',{style:'left:'+Math.min(100,exp/total*100)+'%'})))));
     var diffs=h('div',{class:'diffs'});
@@ -741,7 +756,7 @@ function viewTrack(t){
       t.groups.concat([{name:'Your additions'}]).forEach(function(g){ui.open[t.id+'|'+g.name]=!anyOpen;});render();}},icon('chevron'),'Expand or collapse all'));
   out.push(tb);
   function keep(it){
-    if(f==='today')return !isRest(ci)&&it.d0<=tp&&tp<=it.d;
+    if(f==='today')return !isRest(ci)&&onDay(it,ci);
     if(f==='week')return it.w===cw;
     if(f==='todo')return !state.checks.done[it.id];
     if(f==='revise')return !!state.checks.revise[it.id];
@@ -998,6 +1013,13 @@ function openSignIn(){
     h('button',{type:'button',class:'btn ghost',style:'width:100%;margin-top:.5rem',onclick:sendLink},icon('mail'),'Send the link'),msg);
   overlay.appendChild(dlg);overlay.classList.add('on');email.focus();
 }
+function mailTz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata';}catch(e){return 'Asia/Kolkata';}}
+function mailToggle(key,label){
+  var on=!!state.mail[key];
+  return h('label',{class:'tog'},h('input',{type:'checkbox',checked:on,onchange:function(e){
+    state.mail[key]=e.target.checked;state.mail.email=account&&account.email?account.email:state.mail.email;state.mail.tz=mailTz();
+    save('mail');toast(e.target.checked?label+' email on':label+' email off','mail');openSettings();}}),h('span',{text:label}));
+}
 function openSettings(){
   ui.overlay='settings';overlay.textContent='';
   var file=h('input',{type:'file',accept:'application/json,.json',class:'vh',id:'importFile',onchange:function(e){if(e.target.files[0])importBackup(e.target.files[0]);}});
@@ -1009,10 +1031,12 @@ function openSettings(){
     h('h2',{text:'Settings'}),h('p',{class:'sub',style:'color:var(--muted);margin:0 0 .5rem;font-size:.9375rem',text:'Theme, backups and a reset. Progress lives in this browser'+(store?' and in your account':'')+'.'}),
     cloudState!=='off'?h('div',{class:'row'},h('div',null,h('b',{text:account?'Signed in as '+(account.email||account.name):'Not signed in'}),h('span',{text:account?'Progress is saved to your account and synced to your other devices.':'Sign in to keep your progress across devices.'})),
       account?h('button',{type:'button',class:'btn ghost sm',onclick:function(){closeOverlay();signOutCloud();}},icon('logout'),'Sign out'):h('button',{type:'button',class:'btn sm',onclick:function(){closeOverlay();openSignIn();}},icon('user'),'Sign in')):null,
-    h('div',{class:'row'},h('div',null,h('b',{text:'Plan start date'}),h('span',{text:'The fourteen weeks count from this day. Changing it moves every date.'})),
+    h('div',{class:'row'},h('div',null,h('b',{text:'Plan start date'}),h('span',{text:'The plan counts from this day. Changing it moves every date.'})),
       h('input',{class:'input',type:'date','aria-label':'Plan start date',style:'width:auto',value:state.profile.start,onchange:function(e){var v=e.target.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;state.profile.start=v;applyProfile();ui.selDay=null;save('profile');render();toast('The plan now starts '+fmtShort(START),'calendar');openSettings();}})),
-    h('div',{class:'row'},h('div',null,h('b',{text:'Hours a day'}),h('span',{text:'The daily goal for the hours ring and the weekly total.'})),
-      h('input',{class:'input',type:'number','aria-label':'Hours a day',min:'1',max:'16',step:'0.5',style:'width:6rem',value:String(state.profile.hours),onchange:function(e){var v=Number(e.target.value);if(!(v>=1&&v<=16))return;state.profile.hours=v;applyProfile();save('profile');render();openSettings();}})),
+    h('div',{class:'row'},h('div',null,h('b',{text:'Hours a day'}),h('span',{text:'The plan is written for '+DEFAULT_HOURS+' hours a day. Fewer hours stretch it over more days, more hours shorten it. At '+HOURS_DAY+' hours it takes '+Math.ceil(totalDays()/7)+' weeks and ends '+fmtShort(addDays(START,totalDays()-1))+', with '+DAY_DSA+' problems a day as the goal.'})),
+      h('input',{class:'input',type:'number','aria-label':'Hours a day',min:'1',max:'16',step:'0.5',style:'width:6rem',value:String(state.profile.hours),onchange:function(e){var v=Number(e.target.value);if(!(v>=1&&v<=16))return;state.profile.hours=v;applyProfile();ui.selDay=null;save('profile');render();toast('At '+v+' hours a day the plan ends '+fmtShort(addDays(START,totalDays()-1)),'calendar');openSettings();}})),
+    cloudState==='in'?h('div',{class:'row'},h('div',null,h('b',{text:'Daily emails'}),h('span',{text:'A morning plan at 7 and an evening reminder at 21, in your timezone ('+mailTz()+'), to '+(account.email||'your account email')+'.'})),
+      h('div',{style:'display:grid;gap:.4rem'},mailToggle('morning','Morning plan'),mailToggle('evening','Evening reminder'))):cloudState==='out'?h('div',{class:'row'},h('div',null,h('b',{text:'Daily emails'}),h('span',{text:'Sign in to get a morning plan and an evening reminder by email.'}))):null,
     h('div',{class:'row'},h('div',null,h('b',{text:'Theme'}),h('span',{text:'Follow your system, or pick one.'})),seg([['system','System'],['light','Light'],['dark','Dark']],getTheme(),function(v){applyTheme(v);openSettings();},'Theme')),
     h('div',{class:'row'},h('div',null,h('b',{text:'Back up your progress'}),h('span',{text:'Download a JSON file with every tick, log, application and test score.'})),h('button',{type:'button',class:'btn ghost sm',onclick:exportBackup},icon('download'),'Export')),
     h('div',{class:'row'},h('div',null,h('b',{text:'Restore a backup'}),h('span',{text:'Replaces what is on this device with the file you pick.'})),h('label',{class:'btn ghost sm',for:'importFile',style:'cursor:pointer'},icon('upload'),'Import',file)),

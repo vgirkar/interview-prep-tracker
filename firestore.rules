@@ -5,6 +5,10 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+    // Email preferences: one document per user, listed by the mail job with a service account.
+    match /mail/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
     // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;

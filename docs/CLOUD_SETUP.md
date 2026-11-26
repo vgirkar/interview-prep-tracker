@@ -54,7 +54,19 @@ signs in a fake Google user. Revert both before committing.
   On later sign-ins the account is the source of truth, except for edits made while offline, which are merged in.
 - Signing out leaves the device copy in place. Clear it from Settings if the device is shared.
 
-## Not yet multi-user
+## 4. Daily emails for everyone
 
-The morning and evening emails still come from the GitHub Actions workflow for one inbox, using the plan's default
-start date. Per-user email is the next step and needs a scheduled job that reads each profile.
+Signed-in people turn the morning plan and the evening reminder on in Settings. The GitHub Actions workflow in
+`.github/workflows/daily-email.yml` runs every hour and emails each of them at 7 and 21 in their own timezone, from
+their own start date, hours a day, rest days and ticks, once a day each.
+
+1. Firebase console > Project settings > Service accounts > Generate new private key. Keep the JSON file private.
+2. GitHub > the repo > Settings > Secrets and variables > Actions, add:
+   - `FIREBASE_SERVICE_ACCOUNT`: the whole JSON file as one secret.
+   - `MAIL_USERNAME` and `MAIL_APP_PASSWORD`: a Gmail address and an app password (Google account > Security >
+     2-step verification > App passwords). Gmail allows roughly 500 recipients a day; past that, switch the transport in
+     `scripts/daily-email.mjs` to a sending service such as Resend.
+   - `MAIL_TO` is only used when there is no service account (single-inbox mode).
+3. Run the workflow by hand once with dry run on to see who would get what. The built emails are attached to the run.
+
+Without the service account secret the workflow keeps the old behaviour: one email to `MAIL_TO` from the default dates.
