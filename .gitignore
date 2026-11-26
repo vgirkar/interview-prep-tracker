@@ -1,2 +1,4 @@
 dist/
 .netlify/
+*-debug.log
+node_modules/
