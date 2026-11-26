@@ -483,3 +483,6 @@ details.grp>.body>.appcard:first-child{margin-top:.25rem}
 .hint{font-size:.8125rem;color:var(--muted);margin:.5rem 0 0;text-align:center}
 .item.prob label{font-weight:500}
 .diffs .mini{display:block}
+.heat .cell.rest{background:repeating-linear-gradient(135deg,var(--heat0) 0 3px,var(--line-2) 3px 5px)}
+.heat .cell.rest[data-l="1"],.heat .cell.rest[data-l="2"],.heat .cell.rest[data-l="3"]{background:repeating-linear-gradient(135deg,var(--heat1) 0 3px,var(--line-2) 3px 5px)}
+.legend i.rest{background:repeating-linear-gradient(135deg,var(--heat0) 0 3px,var(--line-2) 3px 5px)}

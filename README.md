@@ -20,6 +20,7 @@ Open `index.html`, or deploy the folder to any static host. There is no build st
 - Tracks: every item with its date, learning links, notes, saved links, a revise flag and, where there is one, a question list to expand. Filter by today, this week, not done or to revise, or search.
 - Applications: a board you can drag cards across, or a list. Status, next step and weekly target.
 - Weekly tests: timed parts with questions drawn from that week, scored 0 to 5, with a score trend.
+- Rest days: if a day is not possible, press Rest day on it (or "Can’t practise today" in the hero). Nothing is planned for that day, everything after it moves one day later, and the plan ends a day later. Undo it the same way. The daily email does not know about rest days taken on the site, so on the days after one it runs a day ahead; the site is the source of truth.
 - Press Ctrl K or Cmd K anywhere to jump to a section, search items or run an action such as logging a problem or starting a focus session.
 
 ## Sources
