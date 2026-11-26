@@ -51,10 +51,13 @@ if (mode === 'evening') {
   subject = `Day ${idx + 1} of ${DAYS}: today’s prep plan, ${label}`;
   const lists = groups.map(([t, items]) => `<h3 style="margin:20px 0 4px">${esc(t.name)}</h3><ul style="margin:0">${items.map((it) => {
     const extra = [];
+    if (it.u) extra.push(link(it.u.includes('leetcode.com') ? 'Solve on LeetCode' : it.u.includes('takeuforward') ? 'Solve on TUF+' : 'Solve', it.u));
     if (LINKS[it.id]) extra.push(link(LINKS[it.id][0], LINKS[it.id][1]));
-    if (it.q) extra.push(link('Videos', 'https://www.youtube.com/results?search_query=' + encodeURIComponent(it.q)));
+    if (it.v) extra.push(link('Video', it.v));
+    else if (it.q) extra.push(link('Videos', 'https://www.youtube.com/results?search_query=' + encodeURIComponent(it.q)));
     const span = it.d0 < it.d ? ` (day ${idx - it.d0 + 1} of ${it.d - it.d0 + 1})` : '';
-    return `<li>${esc(it.full || it.t)}${span}${extra.length ? '<br><span style="font-size:13px">' + extra.join(', ') + '</span>' : ''}</li>`;
+    const diff = it.p && it.diff ? ` <span style="font-size:12px;color:#56627C">${{E:'easy',M:'medium',H:'hard'}[it.diff] || ''}</span>` : '';
+    return `<li>${esc(it.full || it.t)}${diff}${span}${extra.length ? '<br><span style="font-size:13px">' + extra.join(', ') + '</span>' : ''}</li>`;
   }).join('')}</ul>`).join('');
   const split = SPLIT.map((s) => `<li>${esc(s[0])}: ${esc(s[1])}</li>`).join('');
   body = wrap(`<h2 style="margin:0 0 4px">Plan for ${esc(label)}</h2>

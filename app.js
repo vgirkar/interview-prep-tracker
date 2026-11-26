@@ -86,7 +86,7 @@ function connect(){
           else if(s.exists){state[n]=norm(n,clone(s.data()));}
           else if(hasContent(n)){dirty[n]=true;}
         });
-        loaded=true;clearTimeout(slow);saveLocal();render();
+        loaded=true;clearTimeout(slow);migrate();saveLocal();render();
         DOCS.forEach(function(n){if(dirty[n])flush(n,false);});
         refreshSync();
       });
@@ -161,7 +161,21 @@ function allItems(track){
   return out;
 }
 function counts(track){var a=allItems(track),d=0;a.forEach(function(it){if(state.checks.done[it.id])d++;});return {done:d,total:a.length};}
-function solved(){var s=0,k;for(k in state.log.days)s+=Number(state.log.days[k].dsa)||0;return s;}
+var PROBLEMS=[],PROB_IDS={},SEC_BY_ID={};
+TRACKS.forEach(function(t){t.groups.forEach(function(g){g.items.forEach(function(it){if(it.p){PROBLEMS.push(it);PROB_IDS[it.id]=true;}});});});
+SECTIONS.forEach(function(sc){SEC_BY_ID[sc.id]=sc;});
+var PROB_TOTAL=PROBLEMS.length;
+function problemsDone(){var n=0,id;for(id in state.checks.done)if(PROB_IDS[id])n++;return n;}
+function problemsDoneOn(k){var n=0,id;for(id in state.checks.done)if(PROB_IDS[id]&&state.checks.done[id]===k)n++;return n;}
+function manualOn(k){var d=state.log.days[k];return d?Number(d.dsa)||0:0;}
+function solved(){var s=problemsDone(),k;for(k in state.log.days)s+=Number(state.log.days[k].dsa)||0;return s;}
+function migrate(){
+  var changed=false;
+  SECTIONS.forEach(function(sc){var dv=state.checks.done[sc.id];if(!dv)return;
+    for(var i=1;i<=sc.n;i++){var pid='p'+sc.id.slice(1)+'_'+i;if(!state.checks.done[pid])state.checks.done[pid]=dv;}
+    delete state.checks.done[sc.id];delete state.checks.revise[sc.id];changed=true;});
+  if(changed){saveLocal();if(store){dirty.checks=true;flush('checks',false);}}
+}
 function activity(){
   var m={},k,id;
   for(k in state.log.days){m[k]=(Number(state.log.days[k].dsa)||0)+((Number(state.log.days[k].hours)||0)>0?1:0);}
@@ -175,7 +189,7 @@ function streak(act){
   return n;
 }
 function appsThisWeek(cw){return state.apps.list.filter(function(a){var n=dayIndex(new Date(a.date+'T00:00:00'));return n>=(cw-1)*7&&n<cw*7;}).length;}
-function tickedOn(k){var n=0,id;for(id in state.checks.done)if(state.checks.done[id]===k)n++;return n;}
+function tickedOn(k){var n=0,id;for(id in state.checks.done)if(state.checks.done[id]===k&&!PROB_IDS[id])n++;return n;}
 function setDone(id,on,el){
   var r=el&&el.getBoundingClientRect?el.getBoundingClientRect():null;
   if(on){state.checks.done[id]=dkey(now());ui.pop=id;}else delete state.checks.done[id];
@@ -184,14 +198,15 @@ function setDone(id,on,el){
   var x=r?r.left+r.width/2:window.innerWidth/2,y=r?r.top+r.height/2:window.innerHeight/2,grp=null;
   TRACKS.forEach(function(t){t.groups.forEach(function(g){if(g.items.some(function(it){return it.id===id;}))grp=g;});});
   if(grp&&grp.items.every(function(it){return state.checks.done[it.id];})){confetti(x,y,60);toast('Section complete: '+grp.name,'trophy');}
+  else if(PROB_IDS[id]&&problemsDoneOn(dkey(now()))+manualOn(dkey(now()))===DAY_DSA){confetti(x,y,50);toast('Daily DSA goal hit: '+DAY_DSA+' problems','zap');}
   else confetti(x,y,14);
 }
 function logDay(sk,field,v,quiet){
-  var o=state.log.days[sk]||{},was=Number(o[field])||0,goal=field==='dsa'?DAY_DSA:HOURS_DAY;
-  v=Math.max(0,v);
+  var o=state.log.days[sk]||{},was=Number(o[field])||0,goal=field==='dsa'?DAY_DSA:HOURS_DAY,base=field==='dsa'?problemsDoneOn(sk):0;
+  v=Math.max(0,v);was+=base;
   o[field]=v;if(!(Number(o.dsa)>0)&&!(Number(o.hours)>0))delete state.log.days[sk];else state.log.days[sk]=o;
   save('log');render();
-  if(!quiet&&was<goal&&v>=goal){toast(field==='dsa'?'Daily DSA goal hit: '+goal+' problems':'Full '+goal+'-hour day logged','zap');confetti(window.innerWidth/2,window.innerHeight/3,50);}
+  if(!quiet&&was<goal&&v+base>=goal){toast(field==='dsa'?'Daily DSA goal hit: '+goal+' problems':'Full '+goal+'-hour day logged','zap');confetti(window.innerWidth/2,window.innerHeight/3,50);}
 }
 
 /* ---------- theme ---------- */
@@ -225,7 +240,7 @@ function confetti(x,y,n){
     an.onfinish=function(){if(p.parentNode)p.parentNode.removeChild(p);};
   })(i);}
 }
-function xp(){var x=solved()*5+Object.keys(state.checks.done).length*10+state.apps.list.length*8+testsDone()*40,k;for(k in state.log.days)x+=Math.round((Number(state.log.days[k].hours)||0)*2);return x;}
+function xp(){var pd=problemsDone(),od=Object.keys(state.checks.done).length-pd,x=pd*5+od*10+state.apps.list.length*8+testsDone()*40,k;for(k in state.log.days)x+=(Number(state.log.days[k].dsa)||0)*5+Math.round((Number(state.log.days[k].hours)||0)*2);return x;}
 function level(){var x=xp(),n=Math.floor(x/XP_PER);return {n:n+1,name:LEVELS[Math.min(n,LEVELS.length-1)],into:x%XP_PER,xp:x};}
 function badges(){
   var act=activity(),st=streak(act),sv=solved(),dn=Object.keys(state.checks.done),apps=state.apps.list,k,six=false;
@@ -242,7 +257,7 @@ function badges(){
     ['p50','🧩','50 problems','Solve 50 DSA problems',sv>=50,[sv,50]],
     ['p150','🧠','150 problems','Solve 150 DSA problems',sv>=150,[sv,150]],
     ['p300','🚀','300 problems','Solve 300 DSA problems',sv>=300,[sv,300]],
-    ['pall','🏆','Sheet complete','Solve every problem in the sheet',sv>=state.log.total,[sv,state.log.total]],
+    ['pall','🏆','Sheet complete','Tick every problem in the sheet',problemsDone()>=PROB_TOTAL,[problemsDone(),PROB_TOTAL]],
     ['round','⌨️','First timed round','Finish a machine coding round',has(ROUNDS),null],
     ['mock','🎤','First mock','Finish any mock interview',has(MOCKS),null],
     ['test1','📝','First weekly test','Score every part of a weekly test',testsDone()>=1,null],
@@ -341,7 +356,7 @@ function renderTimer(){
 
 /* ---------- views ---------- */
 var view=document.getElementById('view'),tabsEl=document.getElementById('tabs'),navEl=document.getElementById('nav'),dayprogEl=document.getElementById('dayprog');
-var ui={pop:null,acted:false,lastRoute:null,lastLevel:0,calShown:false,filter:{},q:{},open:{},selDay:null,showLate:false,noteOpen:{},linkOpen:{},linkErr:null,confirm:null,appErr:'',appView:null,timer:null,overlay:null,pal:null,hl:null,refocus:null,scrolled:false};
+var ui={qOpen:{},pop:null,acted:false,lastRoute:null,lastLevel:0,calShown:false,filter:{},q:{},open:{},selDay:null,showLate:false,noteOpen:{},linkOpen:{},linkErr:null,confirm:null,appErr:'',appView:null,timer:null,overlay:null,pal:null,hl:null,refocus:null,scrolled:false};
 function route(){var r=location.hash.replace('#','').split('?')[0];return TABS.some(function(t){return t[0]===r;})?r:'today';}
 function navCount(id){
   var t=TRACKS.filter(function(x){return x.id===id;})[0];
@@ -417,15 +432,23 @@ function itemRow(it,track,cw,showTrack,sfx){
   var done=!!state.checks.done[it.id],rev=!!state.checks.revise[it.id],note=state.checks.notes[it.id]||'',cid='c_'+it.id+(sfx||''),today=dayIndex(now());
   var meta=h('div',{class:'meta'});
   if(showTrack)meta.appendChild(h('span',{class:'pill tr',style:'--col:'+tcol(track.id)},h('i',{class:'dot',style:'--col:'+tcol(track.id)+';width:.5rem;height:.5rem'}),track.name));
+  if(it.p)meta.appendChild(h('span',{class:'pill d'+it.diff,text:it.diff==='E'?'Easy':it.diff==='M'?'Medium':it.diff==='H'?'Hard':'Problem'}));
   if(it.w){
     if(!done&&it.d<today)meta.appendChild(h('span',{class:'pill late'},icon('flame'),'Was due '+fmt(addDays(START,it.d))));
     else meta.appendChild(h('span',{class:'pill'},icon('calendar'),(it.d0<it.d?fmtShort(addDays(START,it.d0))+' to '+fmtShort(addDays(START,it.d)):fmt(addDays(START,it.d)))+', week '+it.w));
   }
   function ext(label,url){return h('a',{class:'ilink',href:url,target:'_blank',rel:'noopener noreferrer'},label,icon('ext'));}
-  var saved=state.checks.links[it.id]||'';
-  if(LINKS[it.id])meta.appendChild(ext(LINKS[it.id][0],LINKS[it.id][1]));
-  if(it.q){meta.appendChild(ext('Videos','https://www.youtube.com/results?search_query='+encodeURIComponent(it.q)));meta.appendChild(ext('Articles','https://www.google.com/search?q='+encodeURIComponent(it.q)));}
+  var saved=state.checks.links[it.id]||'',bank=!it.p&&QBANK[it.id]&&QBANK[it.id].length?QBANK[it.id]:null;
+  if(it.p){
+    if(it.u)meta.appendChild(ext(it.u.indexOf('leetcode.com')>=0?'Solve on LeetCode':it.u.indexOf('takeuforward')>=0?'Solve on TUF+':'Solve',it.u));
+    if(it.v)meta.appendChild(ext('Video',it.v));else if(it.q)meta.appendChild(ext('Videos','https://www.youtube.com/results?search_query='+encodeURIComponent(it.q)));
+    if(it.q)meta.appendChild(ext('Articles','https://www.google.com/search?q='+encodeURIComponent(it.q)));
+  }else{
+    if(LINKS[it.id])meta.appendChild(ext(LINKS[it.id][0],LINKS[it.id][1]));
+    if(it.q){meta.appendChild(ext('Videos','https://www.youtube.com/results?search_query='+encodeURIComponent(it.q)));meta.appendChild(ext('Articles','https://www.google.com/search?q='+encodeURIComponent(it.q)));}
+  }
   if(saved.indexOf('https://')===0)meta.appendChild(ext('Your link',saved));
+  if(bank)meta.appendChild(h('button',{type:'button',class:'iact','aria-pressed':ui.qOpen[it.id]?'true':'false','aria-expanded':ui.qOpen[it.id]?'true':'false',onclick:function(){ui.qOpen[it.id]=!ui.qOpen[it.id];render();}},icon('list'),bank.length+(bank.length===1?' question':' questions')));
   meta.appendChild(h('button',{type:'button',class:'iact','aria-pressed':rev?'true':'false',onclick:function(){
     if(rev)delete state.checks.revise[it.id];else state.checks.revise[it.id]=true;save('checks');render();}},icon('bookmark'),rev?'To revise':'Revise'));
   meta.appendChild(h('button',{type:'button',class:'iact',onclick:function(){ui.noteOpen[it.id]=!ui.noteOpen[it.id];render();}},icon('pencil'),note?'Note':'Add note'));
@@ -434,9 +457,15 @@ function itemRow(it,track,cw,showTrack,sfx){
     state.custom.items=state.custom.items.filter(function(x){return x.id!==it.id;});
     delete state.checks.done[it.id];delete state.checks.revise[it.id];delete state.checks.notes[it.id];delete state.checks.links[it.id];
     save('custom');save('checks');render();}},icon('trash'),'Remove'));
-  var row=h('div',{class:'item'+(done?' done':'')+(ui.pop===it.id?' pop':''),'data-id':it.id},
+  var row=h('div',{class:'item'+(done?' done':'')+(ui.pop===it.id?' pop':'')+(it.p?' prob':''),'data-id':it.id},
     h('span',{class:'cb'},h('input',{type:'checkbox',id:cid,checked:done,onchange:function(e){setDone(it.id,e.target.checked,e.target);}}),h('span',null,icon('check'))),
     h('label',{for:cid,text:route()==='today'&&it.full?it.full:it.t}),meta);
+  if(bank&&ui.qOpen[it.id]){
+    var ol=h('ol',{class:'qlist'});
+    bank.forEach(function(x){var li=h('li',{text:Array.isArray(x)?x[0]:x});if(Array.isArray(x)&&x[1])li.appendChild(h('a',{href:x[1],target:'_blank',rel:'noopener noreferrer',text:'Answer'}));ol.appendChild(li);});
+    if(it.id.charAt(0)==='q')ol.appendChild(h('li',{class:'src',text:'From Outcome School’s AI engineering question bank, Apache 2.0, with their answer links.'}));
+    row.appendChild(ol);
+  }
   if(ui.noteOpen[it.id]||note)row.appendChild(h('input',{class:'note',type:'text','aria-label':'Note for '+it.t,placeholder:'What went wrong, or what to remember',value:note,onchange:function(e){
     var v=e.target.value.trim();if(v)state.checks.notes[it.id]=v;else delete state.checks.notes[it.id];save('checks');}}));
   if(ui.linkOpen[it.id]){
@@ -457,7 +486,7 @@ function viewToday(){
   var left=DAYS-1-ci;
   var headline=idx<0?'Starts '+fmtShort(START):idx>=DAYS?'Fourteen weeks done':'Week '+cw+' of '+WEEKS;
   var sub=idx<0?'Your plan runs for fourteen weeks, from 5 December to 12 March. Everything you tick before then still counts.':idx>=DAYS?'The plan ended on 12 March. Everything you logged is still here.':fmt(now())+'. '+left+(left===1?' day':' days')+' to go.';
-  var openToday=0;TRACKS.forEach(function(t){allItems(t).forEach(function(it){if(it.w&&it.d0<=ci&&ci<=it.d&&!state.checks.done[it.id])openToday++;});});
+  var openToday=0,openP=0;TRACKS.forEach(function(t){allItems(t).forEach(function(it){if(it.w&&it.d0<=ci&&ci<=it.d&&!state.checks.done[it.id]){if(it.p)openP++;else openToday++;}});});
   var bento=h('div',{class:'bento'});
   function withIndex(el,i){el.style.setProperty('--i',i);bento.appendChild(el);}
 
@@ -466,7 +495,7 @@ function viewToday(){
     h('div',{class:'row'},
       h('span',{class:'chip'},icon('flame'),st>0?st+'-day streak':'No streak yet'),
       h('span',{class:'chip'},icon('zap'),'Level '+lv.n+', '+lv.name),
-      h('span',{class:'chip'},icon('target'),openToday+(openToday===1?' item':' items')+(idx<0?' on the first day':' open today'))),
+      h('span',{class:'chip'},icon('target'),(openP?openP+(openP===1?' problem':' problems')+' and ':'')+openToday+(openToday===1?' item':' items')+(idx<0?' on the first day':' open today'))),
     h('div',{class:'row'},
       h('a',{class:'btn light',href:'#log',onclick:function(e){e.preventDefault();var el=document.getElementById('log');if(el)el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});}},icon('check'),'Log today'),
       h('button',{type:'button',class:'btn light',onclick:function(){startFocus(25);}},icon('timer'),'Focus for 25 minutes')),
@@ -485,7 +514,8 @@ function viewToday(){
   for(var i=0;i<DAYS;i++){(function(i){
     var d=addDays(START,i),k=dkey(d),a=act[k]||0,l=a===0?0:a<3?1:a<6?2:3,dl=state.log.days[k]||{},tk=tickedOn(k);
     if(a)active++;
-    var desc=a?[(Number(dl.dsa)||0)+(Number(dl.dsa)===1?' problem':' problems'),(Number(dl.hours)||0)+' h',tk+(tk===1?' item':' items')].join(' · '):i>idx?'Not yet':'Nothing logged';
+    var np=problemsDoneOn(k)+(Number(dl.dsa)||0);
+    var desc=a?[np+(np===1?' problem':' problems'),(Number(dl.hours)||0)+' h',tk+(tk===1?' item':' items')].join(' · '):i>idx?'Not yet':'Nothing logged';
     var b=h('button',{type:'button',class:'cell'+(i===ci&&idx>=0&&idx<DAYS?' today':'')+(i===ui.selDay?' sel':''),style:'--c:'+Math.floor(i/7),'data-l':String(l),'aria-label':fmt(d)+', '+desc,onclick:function(){ui.selDay=i;render();}});
     tipOn(b,[fmt(d),desc]);grid.appendChild(b);
   })(i);}
@@ -498,16 +528,21 @@ function viewToday(){
   function stepCol(label,field,val,step,goal){return h('div',null,ring('r_'+field,val,goal,{label:label}),h('div',{class:'rlab',text:label}),stepper(label,val,step,function(v){logDay(sk,field,v);}));}
   withIndex(h('section',{class:'card b-3',id:'log'},
     h('div',{class:'card-h'},h('h2',{text:'Log for '+(sk===todayK?'today':fmtShort(sd))}),ui.selDay!==ci?h('button',{type:'button',class:'link',text:idx<0?'Back to the first day':'Back to today',onclick:function(){ui.selDay=ci;render();}}):h('span',{class:'aside',text:idx<0?'The first day':fmtShort(sd)})),
-    h('div',{class:'rings'},stepCol('DSA problems','dsa',Number(day.dsa)||0,1,DAY_DSA),stepCol('Hours','hours',Number(day.hours)||0,0.5,HOURS_DAY),h('div',null,ring('r_items',ticked,DAY_ITEMS,{label:'Items ticked'}),h('div',{class:'rlab',text:'Items ticked'}))),
+    h('div',{class:'rings'},
+      h('div',null,ring('r_dsa',problemsDoneOn(sk)+(Number(day.dsa)||0),DAY_DSA,{label:'DSA problems'}),h('div',{class:'rlab',text:'DSA problems'}),stepper('Problems solved outside the sheet',Number(day.dsa)||0,1,function(v){logDay(sk,'dsa',v);})),
+      stepCol('Hours','hours',Number(day.hours)||0,0.5,HOURS_DAY),
+      h('div',null,ring('r_items',ticked,DAY_ITEMS,{label:'Items ticked'}),h('div',{class:'rlab',text:'Items ticked'}))),
+    h('p',{class:'hint',text:'Ticked sheet problems count on their own. The stepper is for practice outside the sheet.'}),
     h('div',{class:'focus-row'},h('button',{type:'button',class:'btn soft sm',onclick:function(){startFocus(25);}},icon('timer'),'Focus 25 min'),h('button',{type:'button',class:'btn soft sm',onclick:function(){startFocus(50);}},icon('timer'),'Focus 50 min'))),3);
 
-  var total=state.log.total,sv=solved(),exp=Math.round(total*Math.min(1,(ci+1)/DSA_DAYS)),diff=sv-Math.round(total*Math.min(1,ci/DSA_DAYS));
+  var total=PROB_TOTAL,sv=problemsDone(),exp=Math.round(total*Math.min(1,(ci+1)/DSA_DAYS)),diff=sv-Math.round(total*Math.min(1,ci/DSA_DAYS));
   var paceEl=idx<0?h('span',{class:'aside',text:'Pace starts 5 Dec'}):h('span',{class:'pace '+(diff>=0?'ahead':'behind')},icon(diff>=0?'zap':'flame'),Math.abs(diff)<=2?'On pace':(diff>0?diff+' ahead of pace':Math.abs(diff)+' behind pace'));
   var prog=h('div',{class:'prog'});
-  prog.appendChild(h('a',{href:'#dsa'},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'DSA problems'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
+  prog.appendChild(h('a',{href:'#dsa'},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'Sheet problems'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
     h('div',{class:'bar',style:'--col:'+tcol('dsa')},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}),h('b',{style:'left:'+Math.min(100,exp/total*100)+'%'}))));
   TRACKS.forEach(function(t){var c=counts(t);
-    prog.appendChild(h('a',{href:'#'+t.id},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol(t.id)}),t.id==='dsa'?'DSA sections':t.name),h('span',{class:'ct',text:c.done+' of '+c.total}),
+    if(t.id==='dsa')return;
+    prog.appendChild(h('a',{href:'#'+t.id},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol(t.id)}),t.name),h('span',{class:'ct',text:c.done+' of '+c.total}),
       h('div',{class:'bar',style:'--col:'+tcol(t.id)},h('i',{style:'width:'+(c.total?c.done/c.total*100:0)+'%'}))));});
   var hw=0;for(var j=(cw-1)*7;j<cw*7;j++){var dd=state.log.days[dkey(addDays(START,j))];if(dd)hw+=Number(dd.hours)||0;}
   prog.appendChild(h('a',{href:'#log',onclick:function(e){e.preventDefault();var el=document.getElementById('log');if(el)el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:var(--warn-fill)'}),'Hours this week'),h('span',{class:'ct',text:hw+' of '+HOURS_DAY*7}),
@@ -584,11 +619,13 @@ function viewTrack(t){
     ring('trk_'+t.id,c.done,c.total,{label:'Done',col:tcol(t.id),main:Math.round(c.total?c.done/c.total*100:0)+'%',small:c.done+' of '+c.total}),
     h('div',{class:'kpis'},kpi(t.id+'_due',dueWeek,'Due this week'),kpi(t.id+'_over',over,'Overdue',over?'warn':null),kpi(t.id+'_rev',rev,'Marked to revise'),t.id==='dsa'?kpi('dsa_solved',solved(),'Problems solved','good'):kpi(t.id+'_open',c.total-c.done,'Still open')));
   if(t.id==='dsa'){
-    var sv=solved(),total=state.log.total,exp=Math.round(total*Math.min(1,(ci+1)/DSA_DAYS));
-    ov.appendChild(h('div',{class:'prog'},h('a',{href:'#log',onclick:function(e){e.preventDefault();location.hash='today';}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'Problems solved, logged on the Today page'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
-      h('div',{class:'bar',style:'--col:'+tcol('dsa')},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}),h('b',{style:'left:'+Math.min(100,exp/total*100)+'%'}))),
-      h('div',{class:'addrow',style:'margin-top:.25rem'},h('label',{class:'field',style:'flex:0 1 18rem'},'Problems in the sheet, as TUF+ shows it',
-        h('input',{type:'number',min:'1',inputmode:'numeric',value:String(total),onchange:function(e){var v=Math.round(Number(e.target.value));if(v>0){state.log.total=v;save('log');}render();}})))));
+    var sv=problemsDone(),total=PROB_TOTAL,exp=Math.round(total*Math.min(1,(ci+1)/DSA_DAYS));
+    ov.appendChild(h('div',{class:'prog'},h('a',{href:'#dsa',onclick:function(e){e.preventDefault();}},h('span',{class:'nm'},h('i',{class:'dot',style:'--col:'+tcol('dsa')}),'Sheet problems ticked'),h('span',{class:'ct',text:sv+' of '+total+', pace '+exp}),
+      h('div',{class:'bar',style:'--col:'+tcol('dsa')},h('i',{style:'width:'+Math.min(100,sv/total*100)+'%'}),h('b',{style:'left:'+Math.min(100,exp/total*100)+'%'})))));
+    var diffs=h('div',{class:'diffs'});
+    [['E','easy','var(--good)'],['M','medium','var(--warn-fill)'],['H','hard','var(--bad)']].forEach(function(x){var tot=0,dn=0;PROBLEMS.forEach(function(p){if(p.diff===x[0]){tot++;if(state.checks.done[p.id])dn++;}});
+      diffs.appendChild(h('div',null,h('span',null,h('b',{text:dn+' of '+tot}),' '+x[1]),h('span',{class:'mini',style:'--col:'+x[2]},h('i',{style:'width:'+(tot?dn/tot*100:0)+'%'}))));});
+    ov.appendChild(diffs);
   }
   out.push(ov);
   var sid='search_'+t.id;
@@ -613,7 +650,12 @@ function viewTrack(t){
     if(!list.length)return;shown++;
     var d=0;g.items.forEach(function(it){if(state.checks.done[it.id])d++;});
     var gk=t.id+'|'+g.name,open=q?true:(gk in ui.open?ui.open[gk]:(f!=='all'||g.items.some(function(it){return it.w===cw;})||g.name==='Your additions'));
-    out.push(groupDetails(gk,g.name,d,g.items.length,list.map(function(it){return itemRow(it,t,cw,false);}),{open:open,col:tcol(t.id)}));
+    var kids=[],lastSec=null;
+    list.forEach(function(it){
+      if(it.p&&it.sec!==lastSec){lastSec=it.sec;var sc=SEC_BY_ID[it.sec],sd=0;g.items.forEach(function(x){if(x.sec===it.sec&&state.checks.done[x.id])sd++;});
+        kids.push(h('div',{class:'sech'},h('span',{text:sc?sc.t:it.secName}),h('span',{class:'wk',text:'week '+it.w}),h('span',{class:'mini',style:'--col:'+tcol(t.id)},h('i',{style:'width:'+(sc&&sc.n?sd/sc.n*100:0)+'%'})),h('span',{class:'gct',text:sd+' of '+(sc?sc.n:g.items.length)})));}
+      kids.push(itemRow(it,t,cw,false));});
+    out.push(groupDetails(gk,g.name,d,g.items.length,kids,{open:open,col:tcol(t.id)}));
   });
   if(!shown)out.push(h('div',{class:'card'},emptyState(q?'search':f==='revise'?'bookmark':'check',
     q?'No matches':f==='revise'?'Nothing marked to revise':f==='today'?'Nothing planned today':f==='week'?'Nothing planned this week':f==='todo'?'Everything is ticked':'No items yet',
@@ -687,40 +729,14 @@ function viewApps(){
 }
 
 /* ---------- weekly tests ---------- */
-var QS={
-d1_1:['Reverse a string without a built-in reverse','FizzBuzz with clean input handling'],d1_2:['Print a diamond pattern for n rows','Print the first n rows of Pascal’s triangle'],d1_3:['Group anagrams','Top k frequent elements'],d1_4:['Count primes below n with a sieve','GCD of two numbers, then LCM of an array'],d1_5:['Check a palindrome recursively','Nth Fibonacci number with memoisation'],d1_6:['First unique character in a string','Longest consecutive sequence'],
-d2_1:['Implement insertion sort','Sort colours (Dutch national flag)'],d2_2:['Implement merge sort','Kth largest element with quickselect'],
-d3_1:['Move zeroes','Best time to buy and sell stock'],d3_2:['Product of array except self','Subarray sum equals k'],d3_3:['Merge intervals','Reverse pairs'],
-d4_1:['Search in a rotated sorted array','First and last position of an element in a sorted array'],d4_2:['Koko eating bananas','Split array largest sum'],d4_3:['Search a 2D matrix II','Find a peak element II'],
-d6_1:['Reverse a linked list','Middle of the linked list'],d6_2:['Design browser history','Flatten a multilevel doubly linked list'],d6_3:['Remove the nth node from the end','Add two numbers'],d6_4:['LRU cache','Remove duplicates from a sorted doubly linked list'],d6_5:['Reverse nodes in k-group','Copy list with random pointer'],
-d9_1:['Implement a queue using stacks','Min stack'],d9_2:['Evaluate reverse Polish notation','Basic calculator II'],d9_3:['Daily temperatures','Largest rectangle in a histogram'],d9_4:['Sliding window maximum','LFU cache'],
-d10_1:['Longest substring without repeating characters','Fruit into baskets'],d10_2:['Minimum window substring','Subarrays with k different integers'],
-d13_1:['Binary tree level order traversal','Iterative inorder traversal'],d13_2:['Diameter of a binary tree','Lowest common ancestor of a binary tree'],d13_3:['Binary tree maximum path sum','Serialize and deserialize a binary tree'],
-d14_1:['Validate a binary search tree','Insert into a binary search tree'],d14_2:['Kth smallest element in a BST','Recover a binary search tree'],
-d11_1:['Implement a min-heap with push and pop','Kth largest element in an array'],d11_2:['Task scheduler','K closest points to origin'],d11_3:['Find the median from a data stream','Merge k sorted lists'],
-d15_1:['Number of provinces','Clone graph'],d15_2:['Rotting oranges','Number of islands'],d15_3:['Course schedule II','Alien dictionary'],d15_4:['Network delay time','Cheapest flights within k stops'],d15_5:['Min cost to connect all points','Accounts merge'],d15_6:['Critical connections in a network','Count strongly connected components'],
-d7_1:['Pow(x, n)','Generate parentheses'],d7_2:['Subsets II','Combination sum'],d7_3:['N-Queens','Word search'],
-d5_1:['Valid anagram','Longest common prefix'],d5_2:['Longest palindromic substring','String to integer (atoi)'],
-d16_1:['Climbing stairs','Min cost climbing stairs'],d16_2:['House robber II','Decode ways'],d16_3:['Unique paths II','Minimum path sum'],d16_4:['Partition equal subset sum','Coin change'],d16_5:['Longest common subsequence','Edit distance'],d16_6:['Best time to buy and sell stock with cooldown','Best time to buy and sell stock III'],d16_7:['Longest increasing subsequence','Russian doll envelopes'],d16_8:['Burst balloons','Palindrome partitioning II'],d16_9:['Maximal square','Count square submatrices with all ones'],
-d12_1:['Assign cookies','Lemonade change'],d12_2:['Jump game II','Non-overlapping intervals'],
-d8_1:['Number of 1 bits','Power of two'],d8_2:['Single number II','Generate all subsets using bitmasks'],d8_3:['Prime factorisation of n','Count primes in a range with a segmented sieve'],
-d17_1:['Implement a trie with insert, search and startsWith'],d17_2:['Word search II','Maximum XOR of two numbers in an array'],d18_1:['Shortest palindrome, using KMP','Repeated string match, using Rabin–Karp'],
-s01:['How would you scale a read-heavy service from one server to a million users? Where do the load balancer, cache and CDN each go?'],s02:['When would you pick a relational database over NoSQL? How does an index speed up a query, and what does it cost?'],s03:['Explain leader and follower replication and replication lag. How would you choose a shard key for a users table?'],s04:['State the CAP theorem with a real example. What is the difference between strong and eventual consistency?'],s05:['When would you put a queue between two services? Explain at-least-once delivery and how consumers stay idempotent.'],s06:['Design the API for a payments endpoint: versioning, pagination, idempotency keys and error format.'],s07:['How does consistent hashing work, and what problem do virtual nodes solve?'],s08:['Estimate the storage and requests per second for a service with 100 million daily users posting twice a day.'],
-s10:['Design a URL shortener handling 100 million new links a month. Cover ID generation, storage, caching and redirects.'],s11:['Design a distributed rate limiter for an API gateway. Compare token bucket and sliding window.'],s12:['Design a news feed for 50 million users. Compare fan-out on write with fan-out on read.'],s13:['Design one-to-one and group chat with delivery and read receipts.'],s14:['Design a notification system for push, SMS and email, with retries and user preferences.'],s15:['Design a payments system that never double-charges. Cover idempotency, the ledger and reconciliation.'],s16:['Design search autocomplete that returns suggestions in under 100 milliseconds.'],s17:['Design a web crawler for a billion pages. Cover politeness, deduplication and the URL frontier.'],s18:['Design a video streaming service: upload, transcoding, storage and adaptive playback.'],s19:['Design a ride-hailing service: driver location updates, matching and trip state.'],s20:['Design a file storage and sync service with chunking, deduplication and conflict handling.'],s21:['Design a ticket booking system that never sells the same seat twice.'],s22:['Design a distributed cache: eviction, replication and avoiding a thundering herd.'],s23:['Design a distributed job scheduler with retries, and say what guarantee you can give about running a job once.'],s24:['Design a metrics and monitoring system ingesting a million data points a second.'],
-l01:['Explain each SOLID principle with a one-line Python example, and name one you have seen broken.'],l02:['When would you use an abstract base class over duck typing? What do dataclasses and enums give you?'],l03:['Draw the class diagram for a library system and talk through each relationship aloud.'],l04:['Implement a payment processor that swaps between card, UPI and wallet using the strategy pattern.'],l05:['Implement a factory that creates email, SMS and push senders. When is a factory overkill?'],l06:['Implement a stock-price ticker that notifies subscribers of changes, using the observer pattern.'],l07:['Model an order moving through placed, paid, shipped and delivered using the state pattern.'],l08:['Write a Python decorator that retries a function with backoff, then explain the decorator pattern in OOP terms.'],l09:['Build a query builder for SQL SELECT statements using the builder pattern.'],l10:['Implement a thread-safe singleton in Python. Why is singleton often called an anti-pattern?'],
-l11:['Design a parking lot with several floors, vehicle sizes and hourly pricing.'],l12:['Design and code an LRU cache with O(1) get and put.'],l13:['Design a vending machine with idle, has-money, dispensing and out-of-stock states.'],l14:['Design a logging framework with levels, several sinks and formatters.'],l15:['Design movie ticket booking with shows, seats and seat locking during payment.'],l16:['Design tic-tac-toe for an n by n board with O(1) win detection.'],l17:['Design snake and ladder for several players with a configurable board and dice.'],l18:['Design a library management system: members, loans, reservations and fines.'],l19:['Design a notification service with channels, templates, retries and rate limits.'],l20:['Design an elevator system for a building with several lifts and a scheduling strategy.'],
-m01:['Build Splitwise in 90 minutes: users, groups, equal, exact and percentage splits, and a simplified balance view.'],m02:['Build an elevator controller in 90 minutes for several lifts, with requests from floors and from inside the car.'],m03:['Build a rate limiter library in 90 minutes supporting token bucket and sliding window per user.'],m04:['Build a booking system in 90 minutes with conflict detection and cancellation.'],m05:['Build an in-memory key-value store in 90 minutes with get, set, delete, TTL and nested transactions.'],m06:['Build snake and ladder in 90 minutes for n players, with a driver that plays a full game.'],m07:['Build a parking lot in 90 minutes with entry, exit, slot allocation and fee calculation.'],m08:['Build a task scheduler in 90 minutes with priorities, delays, recurring tasks and a worker pool.'],m09:['Build a food ordering system in 90 minutes: restaurants, menus, cart, order assignment and status.'],m10:['Build a pub-sub system in 90 minutes with topics, consumer offsets and replay.'],m11:['Build a cab booking system in 90 minutes: riders, drivers, nearest-driver matching and trip billing.'],
-b01:['Tell me about yourself.'],b02:['Why are you leaving your current role?'],b05:['Walk me through your resume.'],b03:['Why do you want to work here, and why this role?'],b04:['What are your strengths, and what is a real weakness you are working on?'],b10:['Tell me about a project you owned from start to finish.'],b11:['What is the hardest technical problem you have solved?'],b12:['Tell me about a conflict with a teammate or stakeholder and how you resolved it.'],b13:['Tell me about a time you failed. What did you change afterwards?'],b14:['Tell me about a time you had to deliver against a tight deadline.'],b15:['Tell me about a time you disagreed with a decision. What did you do?'],b16:['Tell me about a time you led or mentored others.'],b17:['Tell me about a time you had to make progress with unclear requirements.'],b18:['Tell me about a time you went beyond what was asked for a customer or user.'],b19:['Tell me about a decision where you had to trade one good thing for another.'],b20:['What questions do you have for us?'],b21:['What are your salary expectations, and when can you join?'],b22:['We would like to make you an offer at this number. How do you respond?'],
-a01:['Explain self-attention step by step. Why is the dot product scaled by the square root of the key dimension?'],a02:['How does byte pair encoding work? What limits the context window, and what happens when you exceed it?'],a03:['Compare temperature, top-k and top-p sampling. What would you set for code generation, and why?'],a04:['What is an embedding, and why use cosine similarity? How would you choose an embedding model?'],a05:['When does few-shot beat zero-shot? How do you get reliable JSON out of a model?'],a06:['Walk through a RAG pipeline from ingestion to the final answer, naming where each failure can occur.'],a07:['Compare fixed-size, recursive and semantic chunking. How do you choose chunk size and overlap?'],a08:['How does HNSW work, and how does it differ from IVF? What trades recall against latency?'],a09:['Why combine BM25 with dense retrieval? What does a cross-encoder reranker add, and what does it cost?'],a10:['How do you evaluate retrieval and generation separately in RAG? Define faithfulness and recall at k.'],a11:['Design an LLM-as-judge evaluation. What biases does it have, and how do you correct for them?'],a12:['How does function calling work end to end? How do you handle a malformed or failed tool call?'],a13:['Explain the ReAct loop. How do you stop an agent looping forever or running up cost?'],a14:['When is a multi-agent design worth it over one agent? How is state shared and checkpointed in a graph-based orchestrator?'],a15:['What is the Model Context Protocol, and how does it differ from plain function calling?'],a16:['Prompting, RAG or fine-tuning: how do you decide? Explain LoRA and how you choose the rank.'],a17:['What does quantisation do to a model, and what breaks at 4 bits? What does continuous batching buy you?'],a18:['List every lever for cutting LLM cost and latency, and rank them for a chat product.'],a19:['What is indirect prompt injection? Describe a layered defence for an agent that reads web pages.'],a20:['Why do LLMs hallucinate, and how would you detect and reduce it in production?'],a21:['What would you trace and log in a production LLM app? How do you version prompts and roll back?'],a22:['Explain the bias and variance trade-off. When would you optimise for precision over recall?'],a23:['Budget the latency of a real-time voice agent across speech-to-text, the LLM and text-to-speech. How do you handle interruptions?'],
-c01:['Implement cosine similarity and top-k retrieval over a list of vectors without a vector library.'],c02:['Implement a text chunker with overlap that never splits a sentence.'],c03:['Implement BM25 scoring from scratch for a small corpus.'],c04:['Build a minimal RAG pipeline: chunk, embed, retrieve and answer with citations.'],c05:['Implement an agent loop with tool dispatch, error handling and a step budget, without a framework.'],c06:['Write a FastAPI endpoint that streams tokens to the client with server-sent events.'],c07:['Write an async batch caller with a concurrency limit, retries with jitter and per-item error isolation.'],c08:['Parse and validate model output against a Pydantic schema, retrying with the error message on failure.'],c09:['Implement an LLM response cache with exact-match and semantic lookup, plus a TTL.'],c10:['Implement conversation memory that stays inside a token budget by summarising older turns.'],c11:['Write an evaluation harness that scores a RAG system on a small labelled set.'],c12:['Implement scaled dot-product attention with a causal mask in NumPy.'],
-g01:['Design an enterprise RAG assistant over 10 million documents with per-user permissions.'],g02:['Design a platform for multi-step agent workflows with retries, human approval and audit logs.'],g03:['Design evaluation and monitoring for an LLM product: offline evals, online signals and a release gate.'],g04:['Design a real-time voice agent for customer calls that responds in under a second.'],g05:['Design a customer support bot that can take real actions, with guardrails and escalation to humans.'],g06:['Design multi-tenant document Q&A where no tenant can ever see another tenant’s data.'],g07:['Design an LLM gateway: routing across providers, failover, caching, budgets and rate limits.'],g08:['Design semantic search over a catalogue of 100 million products.'],
-p01:['What is the GIL? When would you use threads, processes or asyncio?'],p02:['How does the asyncio event loop work? What happens if you call a blocking function inside a coroutine?'],p03:['What is the difference between an iterator and a generator? Write a decorator that times a function.'],p04:['How does a context manager work? Explain reference counting and the garbage collector.'],p05:['How does dependency injection work in FastAPI? When should an endpoint be async def rather than def?'],p06:['How does JWT authentication work, and how do you revoke a token? Outline the OAuth authorisation code flow.'],p07:['Write a query for the second-highest salary in each department using a window function.'],p08:['When does a query not use an index? Explain the isolation levels and one anomaly each prevents.'],p09:['Compare cache-aside with write-through caching. How do you make a POST endpoint idempotent?'],p10:['What is the difference between an image and a container? Describe the CI/CD pipeline you would set up for an API.'],p11:['Pick two AWS services you have used. Explain how they work and why you chose them.'],
-j01:['Walk me through your RAG project. Why that chunking, that retriever and that model, and how did you measure quality?'],j02:['Walk me through your agent project. Why that orchestration, and what broke in production?'],j03:['Walk me through your voice project. Where did the latency go, and how did you reduce it?'],j04:['Walk me through your resume in three minutes, then answer two follow-up questions aloud.']
-};
 var LIVE_FROM=9,PART_NAMES={live:'Live mocks',dsa:'DSA',sd:'System design',lld:'LLD and machine coding',ai:'AI rounds',beh:'Behavioural'};
 function testParts(w){
   var skip={'Mock interviews':1,'Practice':1,'Revision':1,'Company question bank':1},parts=[];
-  function items(tid){var out=[];TRACKS.forEach(function(t){if(t.id===tid)t.groups.forEach(function(g){if(!skip[g.name])g.items.forEach(function(it){if(it.w===w)(QS[it.id]||[it.full||it.t]).forEach(function(q){out.push(q);});});});});return out;}
+  function qtext(x){return Array.isArray(x)?x[0]:x;}
+  function pick(list){if(list.length<=2)return list;var st=((w-1)*2)%list.length;return [list[st],list[(st+1)%list.length]];}
+  function items(tid){var out=[];
+    if(tid==='dsa'){SECTIONS.forEach(function(sc){if(sc.w===w)(QBANK[sc.id]||[sc.t]).forEach(function(q){out.push(qtext(q));});});return out;}
+    TRACKS.forEach(function(t){if(t.id===tid)t.groups.forEach(function(g){if(!skip[g.name])g.items.forEach(function(it){if(it.w===w&&!it.p)pick(QBANK[it.id]||[it.full||it.t]).forEach(function(q){out.push(qtext(q));});});});});return out;}
   function add(k,name,mins,task,list){if(list.length||k==='live')parts.push({k:k,name:name,mins:mins,task:task,list:list});}
   if(w>=LIVE_FROM)add('live','Live mock interview',60,'Book and sit one live mock this week, rotating between DSA, system design and AI rounds. Score how it went and note the feedback you got.',[]);
   add('dsa','DSA, timed',90,'Pick three problems below that you have not solved recently and give each one 30 minutes. No hints and no editorial until the timer ends.',items('dsa'));
@@ -886,6 +902,7 @@ document.addEventListener('keydown',function(e){
   if(ui.overlay==='palette')palKey(e);
 });
 loadLocal();
+migrate();
 render();
 window.addEventListener('hashchange',function(){render();if(!ui.scrolled)window.scrollTo(0,0);});
 window.addEventListener('resize',function(){if(route()==='applications'&&!ui.appView)render();});

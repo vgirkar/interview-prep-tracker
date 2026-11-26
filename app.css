@@ -459,3 +459,27 @@ details.grp>.body>.appcard:first-child{margin-top:.25rem}
 .tsum small{font-weight:500;color:var(--muted);font-size:.8125rem}
 .pill.good{background:var(--good-soft);color:var(--good)}
 .pill.primary{background:var(--primary-soft);color:var(--primary-ink)}
+
+/* ---------- problems and question banks ---------- */
+.pill.dE{background:var(--good-soft);color:var(--good)}
+.pill.dM{background:var(--warn-soft);color:var(--warn)}
+.pill.dH{background:var(--bad-soft);color:var(--bad)}
+.sech{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.9rem 0 .15rem;padding-top:.6rem;border-top:1px solid var(--line);font-size:.8125rem;font-weight:700}
+.sech:first-child{border-top:0;padding-top:0;margin-top:.5rem}
+.sech .gct{color:var(--muted);font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sech .mini{flex:0 0 4rem}
+.sech .wk{color:var(--faint);font-weight:500}
+.sech+.item{border-top:0}
+.qlist{grid-column:2;margin:.4rem 0 .25rem;padding:.6rem .75rem .6rem 1.9rem;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:.9rem;display:grid;gap:.35rem}
+.qlist li{padding-left:.15rem}
+.qlist li::marker{color:var(--faint);font-weight:600;font-size:.8125rem}
+.qlist a{margin-left:.4rem;font-size:.8125rem;font-weight:600;text-decoration:none;color:var(--primary-ink);white-space:nowrap}
+.qlist a:hover{text-decoration:underline}
+.qlist .src{list-style:none;margin-left:-1.4rem;font-size:.75rem;color:var(--faint);padding-top:.25rem}
+.diffs{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.9rem;grid-column:1/-1}
+.diffs div{flex:1 1 9rem;display:grid;gap:.3rem;font-size:.8125rem;color:var(--muted)}
+.diffs b{color:var(--ink);font-variant-numeric:tabular-nums}
+.diffs .mini{max-width:none}
+.hint{font-size:.8125rem;color:var(--muted);margin:.5rem 0 0;text-align:center}
+.item.prob label{font-weight:500}
+.diffs .mini{display:block}
